@@ -1,5 +1,6 @@
 # Personal portfolio website files (not for website)
 *.docx
+!docs/因子构建公式.docx
 # Design notes (not for website)
 论文网站设计思考.md
 页面审美skill.txt

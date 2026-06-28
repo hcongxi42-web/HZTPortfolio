@@ -42,6 +42,7 @@ const I18N_DICT = {
   'sec2.factor_title':    { zh: '特征因子', en: 'Characteristic Factors' },
   'sec2.filter.placeholder': { zh: '搜索特征代码或名称...', en: 'Search feature code or name...' },
   'sec2.filter.all':      { zh: '全部分类', en: 'All Categories' },
+  'sec2.formula_link':    { zh: '点击查看详细因子构建公式', en: 'View Detailed Factor Construction Formulas' },
   'sec2.model_title':     { zh: '模型体系', en: 'Model Architecture' },
   'sec2.col_model':       { zh: '模型', en: 'Model' },
   'sec2.col_k':           { zh: 'K范围', en: 'K Range' },
@@ -76,8 +77,6 @@ const I18N_DICT = {
                          en: 'Normalized feature importance: which of the 87 characteristics drive the predictions? The heatmap shows the feature importance distribution across models and factors. CA1\'s predictions are driven by a broad set of characteristics spanning value, momentum, quality, and risk dimensions — not a single overfit signal.' },
   'sec4.pricing_cap':  { zh: '定价误差诊断：滞后公司特征与组合构建后alpha的关系。如果滞后特征系统性地解释post-formation alpha，说明模型存在遗漏变量偏差。结果显示无系统性关系，验证了模型对横截面收益的定价充分性。',
                          en: 'Pricing error diagnostics: relationship between lagged characteristics and post-formation alphas. If lagged characteristics systematically explain alphas, the model is misspecified. Results show no systematic relationship, confirming that the model adequately prices the cross-section.' },
-  'sec4.loading_cap':  { zh: '因子载荷结构：IPCA六因子体系下各公司特征在因子上的载荷分布。Factor 1 = 价值+规模；Factor 2 = 波动率+换手；Factor 3 = 流动性；Factor 4 = 极端收益；Factor 5 = 动量（纯动量因子）；Factor 6 = 特质波动率。数据驱动提取的因子与经典资产定价文献（Fama-French, Hou-Xue-Zhang等）高度吻合，验证了模型的定价误差并未遗漏系统性风险来源。',
-                         en: 'Factor loading structure: characteristic loadings on IPCA\'s six-factor system. Factor 1 = Value+Size; Factor 2 = Volatility+Turnover; Factor 3 = Liquidity; Factor 4 = Extreme Returns; Factor 5 = Momentum (pure); Factor 6 = Idiosyncratic Volatility. Data-driven factors align closely with classical asset pricing literature (Fama-French, Hou-Xue-Zhang, etc.), confirming that pricing errors do not omit systematic risk sources.' },
 
   // ---- Section 5: Backtest Results ----
   'sec5.title':          { zh: '回测结果', en: 'Backtest Results' },
