@@ -1,25 +1,14 @@
 /* ============================================================
-   main.js — Tab切换、因子表格渲染、数据加载
+   main.js -- 折叠面板、因子表格、锚点导航、滚动监听
    ============================================================ */
 
 let factorsData = null;
 
-// ---- Tab switching ----
-function switchTab(tabName) {
-  // Update buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-
-  const btn = document.querySelector(`.tab-btn[onclick*="${tabName}"]`);
-  const panel = document.getElementById('tab-' + tabName);
-  if (btn) btn.classList.add('active');
-  if (panel) panel.classList.add('active');
-
-  // Lazy load factor table when methodology tab is first opened
-  if (tabName === 'methodology' && factorsData && !document.getElementById('factor-table-body')?.children.length) {
-    renderFactorTable();
-    populateCategoryFilter();
-  }
+// ---- Accordion toggle ----
+function toggleAccordion(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  if (body) body.classList.toggle('open');
 }
 
 // ---- Data Loading ----
@@ -90,9 +79,30 @@ function initFactorFilter() {
   categorySelect?.addEventListener('change', filter);
 }
 
+// ---- Scroll spy: highlight active nav link ----
+function initScrollSpy() {
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.top-nav .nav-links a');
+  if (!sections.length || !navLinks.length) return;
+
+  function updateActive() {
+    let currentId = '';
+    sections.forEach(sec => {
+      const rect = sec.getBoundingClientRect();
+      if (rect.top <= 100) currentId = sec.id;
+    });
+    navLinks.forEach(link => {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + currentId);
+    });
+  }
+
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+}
+
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load factor data for methodology tab
+  // Load factor data
   factorsData = await loadJSON('data/factors.json');
 
   if (factorsData) {
@@ -101,4 +111,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   initFactorFilter();
+  initScrollSpy();
 });
