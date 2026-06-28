@@ -1,211 +1,456 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>A-Share Factor Model Backtest — CA Model Portfolio Performance</title>
+<title>黄中天 — 条件自编码器因子模型 · A股量化研究</title>
 <link rel="stylesheet" href="css/academic.css">
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+/* ---- Tab switching ---- */
+.tab-bar {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin: 0 auto 1.5rem;
+  max-width: 500px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  font-family: 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  border: 2px solid var(--grid);
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  color: var(--muted);
+}
+.tab-btn:first-child { border-radius: 4px 0 0 4px; }
+.tab-btn:last-child  { border-radius: 0 4px 4px 0; }
+.tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: bold;
+}
+.tab-btn:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ---- Language bar ---- */
+.lang-bar {
+  display: flex;
+  justify-content: flex-end;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0.3rem 1rem 0;
+}
+.lang-btn {
+  background: none;
+  border: 1px solid var(--grid);
+  padding: 0.3rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-radius: 3px;
+  color: var(--muted);
+}
+.lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Impact cards ---- */
+.impact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.2rem 0;
+}
+.impact-card {
+  flex: 1 1 180px;
+  text-align: center;
+  padding: 1.2rem 0.6rem;
+  border: 1px solid var(--grid);
+  background: var(--card-bg);
+}
+.impact-card .big-num {
+  font-size: 1.9rem;
+  font-weight: bold;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.impact-card .big-num.highlight { color: var(--accent2); }
+.impact-card .num-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  line-height: 1.4;
+}
+
+/* ---- Section card ---- */
+.section-card {
+  border: 1px solid var(--grid);
+  padding: 1.2rem;
+  margin: 1rem 0;
+  background: #fff;
+}
+.section-card h2 { margin-top: 0; font-size: 1.05rem; border: none; }
+
+/* ---- Images ---- */
+.img-full { width: 100%; max-width: 100%; height: auto; display: block; }
+.fig-caption {
+  font-size: 0.76rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.4rem;
+  line-height: 1.5;
+}
+
+/* ---- Tech badges ---- */
+.tech-badge {
+  display: inline-block;
+  background: var(--code-bg);
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--grid);
+  font-size: 0.78rem;
+  border-radius: 2px;
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 640px) {
+  .tab-btn { font-size: 0.85rem; padding: 0.65rem 0.5rem; }
+  .impact-card .big-num { font-size: 1.4rem; }
+  .impact-card { flex: 1 1 130px; padding: 0.8rem 0.4rem; }
+  .impact-card .num-label { font-size: 0.7rem; }
+  header h1 { font-size: 1.3rem; }
+  .section-card { padding: 0.8rem; }
+  table { font-size: 0.7rem; }
+  th, td { padding: 0.25rem 0.3rem; }
+}
+</style>
 </head>
 <body>
 
-<!-- ================================================================
-     Navigation
-     ================================================================ -->
-<nav class="top-nav">
-  <a href="index.html" class="nav-brand">CAbackend</a>
-  <div class="nav-links">
-    <a href="index.html" data-i18n="nav.home">Home</a>
-    <a href="methodology.html" data-i18n="nav.methodology">Methodology</a>
-    <button id="lang-switch-btn" class="lang-switch" data-i18n="nav.lang_switch">中文</button>
-  </div>
-</nav>
+<!-- Language switch -->
+<div class="lang-bar">
+  <button class="lang-btn" onclick="switchLang()" data-i18n="nav.lang_switch">English</button>
+</div>
 
-<!-- ================================================================
-     Hero
-     ================================================================ -->
-<section class="hero">
-  <h1 data-i18n="hero.title">Conditional Autoencoder Factor Models: Evidence from China's A-Share Market</h1>
-  <p class="author-line" data-i18n="hero.author">Huang Zhongtian · M.Sc. Finance · Jinan University</p>
+<!-- Header -->
+<header style="text-align:center;border-bottom:none;margin-bottom:0;padding-bottom:0.3rem;">
+  <h1 data-i18n="hero.name">黄中天</h1>
+  <p class="meta" data-i18n="hero.bio">金融硕士 · 暨南大学经济学院 · 量化金融与资产定价方向</p>
+  <p class="meta" style="margin-top:0.15rem;">
+    📧 hzttc2025@163.com &nbsp;|&nbsp;
+    <a href="https://github.com/hcongxi42-web" target="_blank">GitHub</a> &nbsp;|&nbsp;
+    <a href="paper.pdf" data-i18n="hero.paper">论文PDF</a>
+  </p>
+</header>
 
-  <div class="hero-stats">
-    <div class="hero-stat">
-      <div class="stat-value" data-i18n="hero.stat1_val">+312.1%</div>
-      <div class="stat-label" data-i18n="hero.stat1_lbl">CA(1-layer) 5yr Total Return vs CSI 300 +24.2%</div>
-    </div>
-    <div class="hero-stat">
-      <div class="stat-value accent2" data-i18n="hero.stat2_val">Sharpe 1.30</div>
-      <div class="stat-label" data-i18n="hero.stat2_lbl">Highest Annualized Sharpe Ratio</div>
-    </div>
-    <div class="hero-stat">
-      <div class="stat-value" data-i18n="hero.stat3_val">87 Features</div>
-      <div class="stat-label" data-i18n="hero.stat3_lbl">Across 10 Categories of A-Share Characteristics</div>
-    </div>
-  </div>
+<!-- ============ Prominent Tab Bar ============ -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('results')">
+    📊 <span data-i18n="tab.results">核心成果</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('methodology')">
+    📋 <span data-i18n="tab.methodology">研究方法</span>
+  </button>
+</div>
 
-  <div class="hero-actions">
-    <a href="paper.pdf" class="btn primary" data-i18n="hero.download_pdf">Download PDF</a>
-    <a href="https://github.com/hcongxi42-web/CAbackend" class="btn" target="_blank" data-i18n="hero.github_repo">GitHub Repo</a>
-  </div>
-</section>
-
-<!-- ================================================================
-     Main Content
-     ================================================================ -->
 <main>
 
-<!-- Abstract -->
-<h2 data-i18n="abstract.title">Abstract</h2>
-<p style="font-size:0.9rem;color:var(--muted);line-height:1.75;" data-i18n="abstract.text">
-We systematically evaluate Conditional Autoencoder (CA) asset pricing models in China's A-share market from 2020 to 2024. Using 87 firm characteristics across 10 categories, we compare traditional factor models (FF), PCA, IPCA, and CA models with varying network depths (0–3 hidden layers). CA(1-layer) delivers the strongest investment performance: a 5-year cumulative return of +312.1% (vs. CSI 300's +24.2%) after A-share transaction costs, with an annualized Sharpe ratio of 1.30. IPCA-extracted factors align closely with classical value, size, momentum, and liquidity dimensions. Our findings demonstrate that nonlinear conditional factor models offer both superior predictive power and practical investment value in China's retail-dominated, policy-intensive market environment.
-</p>
+<!-- ================================================================
+     TAB 1: 核心成果
+     ================================================================ -->
+<div id="tab-results" class="tab-panel active">
 
-<!-- Key Result -->
-<h2 data-i18n="key_result.title">Key Result: Cumulative Return Comparison</h2>
-<div class="chart-card">
-  <div id="key-result-plot" style="width:100%; min-height:450px;"></div>
-  <div class="caption" data-i18n="key_result.caption">
-    CA models outperform CSI 300 by 10×+ at K≥2, after all A-share transaction costs.
+  <!-- One-sentence pitch -->
+  <div class="section-card" style="text-align:center;background:var(--card-bg);">
+    <p style="font-size:1rem;color:#222;line-height:1.8;" data-i18n="pitch.one">
+      使用<strong>条件自编码器（CA）深度神经网络</strong>对中国A股5000+只股票进行因子建模与量化回测。
+      CA(1-layer) 策略在 2020–2024 年实现<strong style="color:var(--accent2);">+312.1%</strong> 累计收益，
+      同期沪深 300 仅 <strong>+24.2%</strong>。扣除真实交易成本后，年化夏普比率达 <strong>1.30</strong>。
+    </p>
   </div>
+
+  <!-- Impact numbers -->
+  <div class="impact-row">
+    <div class="impact-card">
+      <div class="big-num highlight">+312%</div>
+      <div class="num-label" data-i18n="impact.return">5年累计收益（扣费后）<br>沪深300同期：+24%</div>
+    </div>
+    <div class="impact-card">
+      <div class="big-num">1.30</div>
+      <div class="num-label" data-i18n="impact.sharpe">年化夏普比率<br>7个模型中最高</div>
+    </div>
+    <div class="impact-card">
+      <div class="big-num">87</div>
+      <div class="num-label" data-i18n="impact.features">公司特征因子<br>10大经济分类</div>
+    </div>
+    <div class="impact-card">
+      <div class="big-num">7</div>
+      <div class="num-label" data-i18n="impact.models">类模型系统对比<br>FF·PCA·IPCA·CA×4深度</div>
+    </div>
+  </div>
+
+  <!-- Key result chart -->
+  <h2 data-i18n="results.key_title">核心结果：回测净值曲线（市值加权，扣费后）</h2>
+  <div class="section-card">
+    <img src="images/Fig_Combined_K2_VW_LO.png" alt="累计收益 K=2 VW" class="img-full" loading="lazy">
+    <div class="fig-caption" data-i18n="results.k2_cap">
+      ▲ K=2，市值加权。CA1（深蓝实线）持续领跑，期末净值约400万元（初始100万）。
+      IPCA（灰蓝）和CA0（青绿）表现次之。FF（黄）和PCA（橙）长期低于基准线。沪深300（黑虚线）仅微涨。
+    </div>
+  </div>
+
+  <div class="section-card">
+    <img src="images/Fig_Combined_K4_VW_LO.png" alt="累计收益 K=4 VW" class="img-full" loading="lazy">
+    <div class="fig-caption" data-i18n="results.k4_cap">
+      ▲ K=4，市值加权。CA1期末净值约400万元，最大回撤仅-27.3%。非线性条件模型（CA0-CA3）全面领先传统线性模型（FF/PCA）。
+    </div>
+  </div>
+
+  <!-- Performance tables -->
+  <h2 data-i18n="results.perf_title">表现汇总（2020.01–2024.12，市值加权，扣除交易成本）</h2>
+
+  <h3 data-i18n="results.panel_a">表A：累计收益（%）</h3>
+  <div class="table-wrap">
+  <table>
+  <thead><tr><th>模型</th><th>K=1</th><th>K=2</th><th>K=3</th><th>K=4</th><th>K=5</th><th>K=6</th></tr></thead>
+  <tbody>
+  <tr><td>FF (CH4)</td><td class="neg">−41.2</td><td class="neg">−40.3</td><td class="neg">−34.3</td><td class="neg">−31.1</td><td>—</td><td>—</td></tr>
+  <tr><td>PCA</td><td class="neg">−21.5</td><td class="neg">−38.3</td><td class="neg">−35.7</td><td class="neg">−35.8</td><td class="neg">−41.4</td><td class="neg">−33.2</td></tr>
+  <tr><td>IPCA</td><td class="neg">−32.6</td><td class="pos">+202.6</td><td class="pos">+177.1</td><td class="pos">+150.1</td><td class="pos">+170.0</td><td class="pos">+199.7</td></tr>
+  <tr><td>CA (linear)</td><td class="neg">−28.3</td><td class="pos">+195.1</td><td class="pos">+99.9</td><td class="pos">+144.0</td><td class="pos">+160.8</td><td class="pos">+178.5</td></tr>
+  <tr style="background:#fef9e7;"><td><strong>CA (1-layer)</strong></td><td class="neg">−22.0</td><td class="pos best">+312.1</td><td class="pos best">+249.3</td><td class="pos best">+291.8</td><td class="pos best">+262.5</td><td class="pos">+176.3</td></tr>
+  <tr style="border-top:2px solid var(--spine);"><td><strong>沪深300</strong></td><td class="pos">+24.2</td><td class="pos">+24.2</td><td class="pos">+24.2</td><td class="pos">+24.2</td><td class="pos">+24.2</td><td class="pos">+24.2</td></tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 data-i18n="results.panel_b">表B：年化夏普比率</h3>
+  <div class="table-wrap">
+  <table>
+  <thead><tr><th>模型</th><th>K=1</th><th>K=2</th><th>K=3</th><th>K=4</th><th>K=5</th><th>K=6</th></tr></thead>
+  <tbody>
+  <tr><td>FF (CH4)</td><td class="neg">−0.80</td><td class="neg">−0.78</td><td class="neg">−0.28</td><td class="neg">−0.30</td><td>—</td><td>—</td></tr>
+  <tr><td>PCA</td><td class="neg">−0.21</td><td class="neg">−0.45</td><td class="neg">−0.42</td><td class="neg">−0.44</td><td class="neg">−0.53</td><td class="neg">−0.39</td></tr>
+  <tr><td>IPCA</td><td class="neg">−0.46</td><td class="pos">+1.03</td><td class="pos">+1.01</td><td class="pos">+0.92</td><td class="pos">+0.96</td><td class="pos">+1.08</td></tr>
+  <tr><td>CA (linear)</td><td class="neg">−0.39</td><td class="pos">+1.08</td><td class="pos">+0.70</td><td class="pos">+0.81</td><td class="pos">+0.95</td><td class="pos">+1.00</td></tr>
+  <tr style="background:#fef9e7;"><td><strong>CA (1-layer)</strong></td><td class="neg">−0.32</td><td class="pos best">+1.30</td><td class="pos">+1.19</td><td class="pos best">+1.33</td><td class="pos best">+1.32</td><td class="pos best">+1.09</td></tr>
+  <tr style="border-top:2px solid var(--spine);"><td><strong>沪深300</strong></td><td class="pos">+0.25</td><td class="pos">+0.25</td><td class="pos">+0.25</td><td class="pos">+0.25</td><td class="pos">+0.25</td><td class="pos">+0.25</td></tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 data-i18n="results.panel_c">表C：最大回撤（%）</h3>
+  <div class="table-wrap">
+  <table>
+  <thead><tr><th>模型</th><th>K=1</th><th>K=2</th><th>K=3</th><th>K=4</th><th>K=5</th><th>K=6</th></tr></thead>
+  <tbody>
+  <tr><td>FF (CH4)</td><td class="neg">−47.2</td><td class="neg">−47.5</td><td class="neg">−67.8</td><td class="neg">−58.2</td><td>—</td><td>—</td></tr>
+  <tr><td>PCA</td><td class="neg">−46.9</td><td class="neg">−47.3</td><td class="neg">−44.5</td><td class="neg">−41.8</td><td class="neg">−48.8</td><td class="neg">−47.8</td></tr>
+  <tr><td>IPCA</td><td class="neg">−35.2</td><td class="neg">−26.7</td><td class="neg">−24.5</td><td class="neg">−24.4</td><td class="neg">−22.8</td><td class="neg best">−19.9</td></tr>
+  <tr><td>CA (linear)</td><td class="neg">−31.6</td><td class="neg best">−21.7</td><td class="neg">−24.4</td><td class="neg">−29.7</td><td class="neg best">−21.2</td><td class="neg">−21.9</td></tr>
+  <tr style="background:#fef9e7;"><td><strong>CA (1-layer)</strong></td><td class="neg">−31.4</td><td class="neg">−28.7</td><td class="neg">−27.5</td><td class="neg">−27.3</td><td class="neg">−25.3</td><td class="neg best">−19.9</td></tr>
+  <tr style="border-top:2px solid var(--spine);"><td><strong>沪深300</strong></td><td class="neg">−26.0</td><td class="neg">−26.0</td><td class="neg">−26.0</td><td class="neg">−26.0</td><td class="neg">−26.0</td><td class="neg">−26.0</td></tr>
+  </tbody>
+  </table>
+  </div>
+
+  <p style="font-size:0.76rem;color:var(--muted);margin-top:0.4rem;" data-i18n="results.table_note">
+    注：Top-Decile仅做多组合，月度调仓，市值加权。扣除A股实际交易成本（印花税0.05%卖方、佣金0.025%双向、过户费0.002%双向）。加粗=列最优，绿=正收益，红=负收益。FF限K≤4。
+  </p>
+
+  <!-- Detailed charts gallery -->
+  <h2 data-i18n="results.gallery">回测图集（K=1~6，市值加权）</h2>
+  <div id="charts-gallery"></div>
 </div>
 
-<!-- Performance Summary -->
-<h2 data-i18n="perf.title">Performance Summary</h2>
-<div id="perf-tables"></div>
-<p style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;" data-i18n="perf.note">
-Top-decile long-only, monthly rebalancing, value-weighted (VW), after A-share transaction costs (stamp duty 5bp sell-side, commission 2.5bp, transfer fee 0.2bp). FF limited to K ≤ 4. Bold = best in column. Green = positive, Red = negative.
-</p>
+<!-- ================================================================
+     TAB 2: 研究方法
+     ================================================================ -->
+<div id="tab-methodology" class="tab-panel">
 
-<!-- Backtest Charts by K -->
-<h2 data-i18n="results.title">Backtest Charts — Value-Weighted (VW)</h2>
+  <!-- Plain language summary -->
+  <div class="section-card" style="background:var(--card-bg);">
+    <h2 data-i18n="method.what" style="margin-top:0;border:none;">这篇文章做了什么</h2>
+    <p style="font-size:0.9rem;line-height:1.85;color:#444;" data-i18n="method.what_text">
+      从 CSMAR、RESSET 数据库获取 A 股 2011–2024 年 <strong>5447 只股票、87 个公司特征</strong>
+      （估值盈利、成长投资、风险杠杆、动量、流动性交易、会计质量运营效率六大维度），构建
+      <strong>条件自编码器（CA）深度神经网络</strong>——编码器将特征非线性映射为时变因子暴露 β，
+      解码器从收益数据中提取潜在因子，联合优化。在 2020–2024 年样本外期间进行
+      <strong>纯样本外月度调仓回测</strong>，扣除 A 股实际交易成本。
+    </p>
+  </div>
 
-<div class="accordion">
-  <button class="accordion-header open">
-    <span>K = 2 <span class="best-badge" data-i18n="results.best">Best</span></span>
-    <span class="arrow">▶</span>
-  </button>
-  <div class="accordion-body open">
-    <div id="plot-k2" style="width:100%; min-height:600px;"></div>
+  <!-- Tech stack -->
+  <div class="section-card" style="text-align:center;">
+    <h2 data-i18n="method.tech" style="margin-top:0;border:none;">技术栈</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin-top:0.6rem;">
+      <span class="tech-badge">Python</span>
+      <span class="tech-badge">PyTorch</span>
+      <span class="tech-badge">pandas</span>
+      <span class="tech-badge">NumPy</span>
+      <span class="tech-badge">scikit-learn</span>
+      <span class="tech-badge">Matplotlib</span>
+      <span class="tech-badge">CUDA/GPU</span>
+      <span class="tech-badge">Git</span>
+      <span class="tech-badge">statsmodels</span>
+    </div>
   </div>
-  <button class="accordion-header">
-    <span>K = 1</span>
-    <span class="arrow">▶</span>
-  </button>
-  <div class="accordion-body">
-    <div id="plot-k1" style="width:100%; min-height:600px;"></div>
-  </div>
-  <button class="accordion-header">
-    <span>K = 3</span>
-    <span class="arrow">▶</span>
-  </button>
-  <div class="accordion-body">
-    <div id="plot-k3" style="width:100%; min-height:600px;"></div>
-  </div>
-  <button class="accordion-header">
-    <span>K = 4</span>
-    <span class="arrow">▶</span>
-  </button>
-  <div class="accordion-body">
-    <div id="plot-k4" style="width:100%; min-height:600px;"></div>
-  </div>
-  <button class="accordion-header">
-    <span>K = 5</span>
-    <span class="arrow">▶</span>
-  </button>
-  <div class="accordion-body">
-    <div id="plot-k5" style="width:100%; min-height:600px;"></div>
-  </div>
-  <button class="accordion-header">
-    <span>K = 6</span>
-    <span class="arrow">▶</span>
-  </button>
-  <div class="accordion-body">
-    <div id="plot-k6" style="width:100%; min-height:600px;"></div>
-  </div>
-</div>
 
-<!-- Static image fallback section -->
-<h2>Detailed Charts (Static)</h2>
-<p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem;">
-  High-resolution static charts for each K value. For interactive versions, use the accordion panels above.
-</p>
-
-<script>
-// Generate static image gallery dynamically
-const kValues = [1,2,3,4,5,6];
-const chartTypes = [
-  { prefix: 'Fig_Combined', label: 'Combined' },
-  { prefix: 'FigA_CumRet',   label: 'Cumulative Return' },
-  { prefix: 'FigB_Drawdown', label: 'Max Drawdown' },
-  { prefix: 'FigC_MonthlyRet', label: 'Monthly Returns' },
-];
-for (const k of kValues) {
-  document.write('<h3>K = ' + k + '</h3>');
-  document.write('<div class="chart-card"><img src="images/Fig_Combined_K' + k + '_VW_LO.png" alt="Combined K=' + k + '" loading="lazy" style="width:100%;max-width:100%;"><div class="caption">Fig. Combined K=' + k + '</div></div>');
-  document.write('<div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin:0.6rem 0 1.5rem;">');
-  for (const ct of chartTypes.slice(1)) {
-    document.write('<div style="flex:1 1 280px;min-width:0;border:1px solid var(--grid);padding:0.3rem;background:var(--card-bg);"><img src="images/' + ct.prefix + '_K' + k + '_VW_LO.png" alt="' + ct.label + ' K=' + k + '" loading="lazy" style="width:100%;"></div>');
-  }
-  document.write('</div>');
-}
-// K=4 EW
-document.write('<h3>K = 4 — Equal-Weighted (EW)</h3>');
-document.write('<div class="chart-card"><img src="images/Fig_Combined_K4_EW_LO.png" alt="Combined K=4 EW" loading="lazy" style="width:100%;max-width:100%;"><div class="caption">Fig. Combined K=4 (EW)</div></div>');
-document.write('<div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin:0.6rem 0 1.5rem;">');
-for (const ct of chartTypes.slice(1)) {
-  document.write('<div style="flex:1 1 280px;min-width:0;border:1px solid var(--grid);padding:0.3rem;background:var(--card-bg);"><img src="images/' + ct.prefix + '_K4_EW_LO.png" alt="' + ct.label + ' K=4 EW" loading="lazy" style="width:100%;"></div>');
-}
-document.write('</div>');
-</script>
-
-<!-- Methodology Summary -->
-<section style="margin:2.5rem 0;padding:1.5rem;border:1px solid var(--grid);background:var(--card-bg);">
-  <h2>Methodology at a Glance</h2>
+  <!-- Pipeline -->
+  <h2 data-i18n="method.pipeline_title">数据处理流水线</h2>
   <div class="process-flow">
     <div class="process-step">
       <div class="step-num">1</div>
-      <div class="step-title" data-i18n="process.step1_title">Winsorize</div>
-      <div class="step-desc" data-i18n="process.step1_desc">(5%, 95%) by month</div>
+      <div class="step-title" data-i18n="process.step1_title">缩尾</div>
+      <div class="step-desc" data-i18n="process.step1_desc">月度(5%,95%)</div>
     </div>
     <div class="process-arrow">→</div>
     <div class="process-step">
       <div class="step-num">2</div>
-      <div class="step-title" data-i18n="process.step2_title">Normalize</div>
-      <div class="step-desc" data-i18n="process.step2_desc">Min-Max to [-1, 1]</div>
+      <div class="step-title" data-i18n="process.step2_title">标准化</div>
+      <div class="step-desc" data-i18n="process.step2_desc">Min-Max至[-1,1]</div>
     </div>
     <div class="process-arrow">→</div>
     <div class="process-step">
       <div class="step-num">3</div>
-      <div class="step-title" data-i18n="process.step3_title">Fill Missing</div>
-      <div class="step-desc" data-i18n="process.step3_desc">3-stage hierarchical</div>
+      <div class="step-title" data-i18n="process.step3_title">缺失值</div>
+      <div class="step-desc" data-i18n="process.step3_desc">三阶段分层</div>
     </div>
     <div class="process-arrow">→</div>
     <div class="process-step">
       <div class="step-num">4</div>
-      <div class="step-title" data-i18n="process.step4_title">Portfolio Construction</div>
-      <div class="step-desc" data-i18n="process.step4_desc">Managed portfolio returns</div>
+      <div class="step-title" data-i18n="process.step4_title">组合构建</div>
+      <div class="step-desc" data-i18n="process.step4_desc">特征管理组合</div>
     </div>
   </div>
-  <p style="text-align:center;margin-top:1rem;">
-    <a href="methodology.html" style="color:var(--link);font-size:0.9rem;">→ Full methodology, factor classification &amp; descriptive statistics</a>
+
+  <!-- Model comparison table -->
+  <h2 data-i18n="method.model_title">模型体系</h2>
+  <div class="table-wrap">
+  <table style="font-size:0.8rem;">
+  <thead><tr><th data-i18n="method.col_model">模型</th><th data-i18n="method.col_k">K范围</th><th data-i18n="method.col_method">估计方法</th><th data-i18n="method.col_note">特点</th></tr></thead>
+  <tbody>
+  <tr><td>FF (CH4)</td><td>1–4</td><td>Fama-MacBeth两步</td><td>特质波动率因子，中国市场适配版</td></tr>
+  <tr><td>PCA</td><td>1–6</td><td>渐近主成分</td><td>无监督统计因子提取</td></tr>
+  <tr><td>IPCA</td><td>1–6</td><td>交替最小二乘(ALS)</td><td>特征→因子暴露的线性映射</td></tr>
+  <tr><td>CA0</td><td>1–6</td><td>Adam SGD</td><td>线性编码-解码，等价IPCA</td></tr>
+  <tr style="background:#fef9e7;"><td><strong>CA1</strong></td><td>1–6</td><td>Adam+ReLU</td><td><strong>1隐藏层[16]，最优预测能力</strong></td></tr>
+  <tr><td>CA2</td><td>1–6</td><td>Adam+ReLU</td><td>2隐藏层[16,8]</td></tr>
+  <tr><td>CA3</td><td>1–6</td><td>Adam+ReLU</td><td>3隐藏层[16,8,4]</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem;" data-i18n="method.model_detail">
+    正则化：L1惩罚 + Early Stopping + BatchNorm + 10种子集成。
+    训练框架：递归扩展窗口（训练期2011-2019，测试期2020-2024），纯样本外。
+    CA0 = IPCA（当激活函数为线性且仅单隐藏层时理论等价）。
+    所有CA模型因子数K=1-6，FF限于K=1-4（仅4个可观测因子）。
   </p>
-</section>
+
+  <!-- Factor classification table -->
+  <h2 data-i18n="method.factor_title">87个特征因子 · 10大分类</h2>
+  <div class="filter-bar">
+    <input type="text" id="factor-search" data-i18n-placeholder="method.filter.placeholder" placeholder="搜索特征...">
+    <select id="factor-category-filter">
+      <option value="all" data-i18n="method.filter.all">全部分类</option>
+    </select>
+  </div>
+  <div class="table-wrap" style="max-height:450px;">
+  <table style="font-size:0.76rem;">
+  <thead><tr><th>代码</th><th>英文名</th><th>分类</th></tr></thead>
+  <tbody id="factor-table-body"></tbody>
+  </table>
+  </div>
+
+  <!-- Backtest design -->
+  <h2 data-i18n="method.backtest_title">回测方法</h2>
+  <div class="section-card">
+    <p style="font-size:0.88rem;line-height:1.8;" data-i18n="method.backtest_text">
+      <strong>每月末：</strong>用滚动扩展窗口历史因子收益均值 λ̂<sub>t−1</sub> × 个股前月因子暴露 β̂<sub>i,t−1</sub> = 预期收益 r̂<sub>i,t</sub>。
+      全市场股票按预期收益分为十组，<strong>买入最高组（仅做多）</strong>，持有一个月后全部卖出换仓。
+      2020年1月至2024年12月，共60个月。
+    </p>
+    <p style="font-size:0.86rem;color:var(--muted);margin-top:0.6rem;">
+      <strong>交易成本：</strong>印花税0.05%（卖方）· 佣金0.025%（双向）· 过户费0.002%（双向）≈ 每轮10.4bp
+      &nbsp;|&nbsp; <strong>加权：</strong>等权(EW) + 市值加权(VW) &nbsp;|&nbsp; <strong>基准：</strong>沪深300
+    </p>
+  </div>
+
+  <!-- Factor attribution images -->
+  <h2 data-i18n="method.attr_title">因子归因：模型提取的因子是否有经济含义？</h2>
+
+  <div class="section-card">
+    <img src="images/word/word_img_37.svg" alt="IPCA因子归因" class="img-full" loading="lazy" style="background:#fff;">
+    <div class="fig-caption" data-i18n="method.attr_ipca_cap">
+      ▲ <strong>IPCA 六因子归因（三重识别后）。</strong>
+      Factor 1 = 价值+规模（bm_ia负、mvel1正）；
+      Factor 2 = 波动率+换手（retvol正、turn正）；
+      Factor 3 = 流动性（zerotrade正）；
+      Factor 4 = 极端收益（maxret正）；
+      Factor 5 = 动量（mom12m正，专属）；
+      Factor 6 = 特质波动率（idiovol正）。
+      <strong>数据驱动提取的因子与经典资产定价文献高度吻合。</strong>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <img src="images/word/word_img_39.svg" alt="CA1因子归因" class="img-full" loading="lazy" style="background:#fff;">
+    <div class="fig-caption" data-i18n="method.attr_ca1_cap">
+      ▲ <strong>CA1 Integrated Gradients 归因。</strong>
+      归因方向与IPCA一致（Factor 1仍是价值+规模，Factor 5仍是动量），
+      但分布更分散——非线性网络将特征信息拆分重组到各因子中，每个因子是大量特征微弱贡献的综合。
+      这解释了CA1的预测增益：来源于对特征间弱交互的广泛利用，而非少数核心特征。
+    </div>
+  </div>
+
+  <!-- Robustness -->
+  <h2 data-i18n="method.robustness_title">稳健性检验</h2>
+  <div class="section-card" style="font-size:0.86rem;line-height:1.8;color:#444;">
+    <p data-i18n="method.robust_text">
+      为确保结论可靠，进行了三项稳健性检验：
+    </p>
+    <ol style="padding-left:1.2rem;margin-top:0.5rem;">
+      <li data-i18n="method.robust_1"><strong>更换缺失值填充阈值（10/14/18）：</strong>模型相对排序保持稳定，CA0和CA1始终最优。</li>
+      <li data-i18n="method.robust_2"><strong>剔除市值最小30%股票：</strong>按 Liu et al. (2019) 去除"壳价值"污染后，CA模型优势依然成立。</li>
+      <li data-i18n="method.robust_3"><strong>缩短训练期（9年→5年）：</strong>深层网络(CA2/CA3)因过拟合下降更明显，CA0/CA1样本效率最优。</li>
+    </ol>
+  </div>
+</div>
 
 </main>
 
-<footer>
-  <p data-i18n="footer.generated">
-    Generated by CAbackend — A-Share Factor Model Backtest Engine
-  </p>
-  <p style="margin-top:0.3rem;">
-    <a href="https://github.com/hcongxi42-web/CAbackend">GitHub</a>
-    &nbsp;·&nbsp; Style: Academic Journal (Times New Roman, semi-deboxed, low-saturation)
-    &nbsp;·&nbsp; <span data-i18n="footer.last_updated">Last updated</span>: 2026-06-28
+<footer style="margin-top:2.5rem;">
+  <p style="font-size:0.78rem;color:var(--muted);">
+    © 2026 黄中天 &nbsp;·&nbsp; <a href="https://github.com/hcongxi42-web/HZTPortfolio">GitHub</a>
+    &nbsp;·&nbsp; <span data-i18n="footer.style">学术期刊风格 (Times New Roman, 半去框化, 低饱和度)</span>
   </p>
 </footer>
 
 <script src="js/i18n.js"></script>
-<script src="js/plots.js"></script>
 <script src="js/main.js"></script>
+<script>
+// Generate static chart gallery
+(function(){
+  var g = document.getElementById('charts-gallery');
+  if (!g) return;
+  var h = '';
+  for (var k = 1; k <= 6; k++) {
+    h += '<h3>K = ' + k + '</h3>';
+    h += '<div class="section-card"><img src="images/Fig_Combined_K' + k + '_VW_LO.png" alt="Combined K=' + k + '" class="img-full" loading="lazy"></div>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.4rem 0 1rem;">';
+    h += '<div style="flex:1 1 260px;min-width:0;border:1px solid var(--grid);padding:0.2rem;background:var(--card-bg);"><img src="images/FigA_CumRet_K' + k + '_VW_LO.png" alt="CumRet K=' + k + '" class="img-full" loading="lazy"></div>';
+    h += '<div style="flex:1 1 260px;min-width:0;border:1px solid var(--grid);padding:0.2rem;background:var(--card-bg);"><img src="images/FigB_Drawdown_K' + k + '_VW_LO.png" alt="DD K=' + k + '" class="img-full" loading="lazy"></div>';
+    h += '<div style="flex:1 1 260px;min-width:0;border:1px solid var(--grid);padding:0.2rem;background:var(--card-bg);"><img src="images/FigC_MonthlyRet_K' + k + '_VW_LO.png" alt="MR K=' + k + '" class="img-full" loading="lazy"></div>';
+    h += '</div>';
+  }
+  g.innerHTML = h;
+})();
+</script>
 </body>
 </html>

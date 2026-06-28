@@ -31,7 +31,6 @@ body {
   color: var(--text);
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
-  padding-top: var(--nav-height);
 }
 
 /* ---- Navigation ---- */
