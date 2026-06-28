@@ -1,0 +1,9 @@
+# Personal portfolio website files (not for website)
+*.docx
+# Design notes (not for website)
+论文网站设计思考.md
+页面审美skill.txt
+
+# OS files
+.DS_Store
+Thumbs.db

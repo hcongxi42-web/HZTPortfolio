@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Methodology & Data — CA Factor Model Backtest</title>
+<link rel="stylesheet" href="css/academic.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="top-nav">
+  <a href="index.html" class="nav-brand">CAbackend</a>
+  <div class="nav-links">
+    <a href="index.html" data-i18n="nav.home">Home</a>
+    <a href="methodology.html" data-i18n="nav.methodology">Methodology</a>
+    <button id="lang-switch-btn" class="lang-switch" data-i18n="nav.lang_switch">中文</button>
+  </div>
+</nav>
+
+<header>
+  <h1 data-i18n="method.title">Methodology & Data</h1>
+  <div class="meta">
+    Training: Jan 2011 – Dec 2019 &nbsp;|&nbsp;
+    Testing: Jan 2020 – Dec 2024 &nbsp;|&nbsp;
+    5,447 A-Share Stocks
+  </div>
+</header>
+
+<main>
+
+<!-- ================================================================
+     1. Data Overview
+     ================================================================ -->
+<h2 data-i18n="method.data_overview">Data Overview</h2>
+<p style="font-size:0.9rem;color:var(--muted);" data-i18n="method.data_source">
+  Data Sources: CSMAR & RESSET · Jan 2011 – Dec 2024 · 5,447 A-share stocks (ex-ST) · Risk-free rate: 1yr government bond yield · Market return: float-cap-weighted all-stock return
+</p>
+
+<h3 data-i18n="method.pipeline">Data Processing Pipeline</h3>
+<div class="process-flow">
+  <div class="process-step">
+    <div class="step-num">1</div>
+    <div class="step-title" data-i18n="process.step1_title">Winsorize</div>
+    <div class="step-desc" data-i18n="process.step1_desc">(5%, 95%) by month</div>
+  </div>
+  <div class="process-arrow">→</div>
+  <div class="process-step">
+    <div class="step-num">2</div>
+    <div class="step-title" data-i18n="process.step2_title">Normalize</div>
+    <div class="step-desc" data-i18n="process.step2_desc">Min-Max to [-1, 1]</div>
+  </div>
+  <div class="process-arrow">→</div>
+  <div class="process-step">
+    <div class="step-num">3</div>
+    <div class="step-title" data-i18n="process.step3_title">Fill Missing</div>
+    <div class="step-desc" data-i18n="process.step3_desc">3-stage hierarchical</div>
+  </div>
+  <div class="process-arrow">→</div>
+  <div class="process-step">
+    <div class="step-num">4</div>
+    <div class="step-title" data-i18n="process.step4_title">Portfolio Construction</div>
+    <div class="step-desc" data-i18n="process.step4_desc">Managed portfolio returns</div>
+  </div>
+</div>
+
+<div style="font-size:0.82rem;color:var(--muted);margin-top:1rem;">
+  <p><strong>Winsorization:</strong> Each characteristic is winsorized at (5%, 95%) monthly to control for extreme values within each cross-section.</p>
+  <p><strong>Normalization:</strong> Cross-sectional rank-normalization to [-1, 1] interval: \(x' = 2 \cdot \frac{x - \min}{\max - \min} - 1\).</p>
+  <p><strong>Missing value filling:</strong> Three-stage strategy — (1) rows with &gt;14 missing features (≈16%) are dropped; (2) stock-specific historical mean imputation; (3) global feature mean as fallback. Post-processing panel: (572,605 × 89), zero missing values.</p>
+</div>
+
+<!-- ================================================================
+     2. Factor Classification
+     ================================================================ -->
+<h2 data-i18n="method.factor_class">Factor Classification System</h2>
+<p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.8rem;">
+  87 firm characteristics organized into 10 economic categories. Adapted from Gu et al. (2020, 2021) with China-market adjustments.
+</p>
+
+<div class="filter-bar">
+  <input type="text" id="factor-search" data-i18n-placeholder="method.filter.placeholder" placeholder="Search features...">
+  <select id="factor-category-filter">
+    <option value="all" data-i18n="method.filter.all">All Categories</option>
+  </select>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+  <tr><th>Feature</th><th>Description</th><th>Category</th></tr>
+</thead>
+<tbody id="factor-table-body">
+  <!-- Populated by main.js -->
+</tbody>
+</table>
+</div>
+
+<!-- ================================================================
+     3. Descriptive Statistics
+     ================================================================ -->
+<h2 data-i18n="method.desc_stats">Descriptive Statistics</h2>
+<p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.8rem;">
+  Statistics computed after winsorization and [-1, 1] normalization. Sample period: 2011–2024, 5,447 stocks.
+</p>
+
+<div class="table-wrap" style="max-height:600px;">
+<table>
+<thead>
+  <tr>
+    <th style="position:sticky;left:0;background:#fafafa;z-index:1;">Feature</th>
+    <th>Label</th>
+    <th>Mean</th><th>Std</th><th>Min</th><th>P5</th><th>P95</th><th>Max</th>
+    <th>Missing%</th>
+  </tr>
+</thead>
+<tbody id="desc-stats-body">
+  <!-- Populated by main.js -->
+</tbody>
+</table>
+</div>
+
+<!-- ================================================================
+     4. Model Architecture
+     ================================================================ -->
+<h2 data-i18n="method.model_arch">Model Architecture</h2>
+
+<div class="two-col">
+  <div>
+    <h3>Models Compared</h3>
+    <table>
+    <thead><tr><th>Model</th><th>K Range</th><th>Method</th><th>Key Feature</th></tr></thead>
+    <tbody>
+      <tr><td>FF (CH4)</td><td>1–4</td><td>Fama-MacBeth 2-step</td><td>Idiosyncratic volatility factors</td></tr>
+      <tr><td>PCA</td><td>1–6</td><td>Asymptotic PCA</td><td>Unsupervised latent factors</td></tr>
+      <tr><td>IPCA</td><td>1–6</td><td>Alternating Least Squares</td><td>Linear feature→beta mapping</td></tr>
+      <tr><td>CA0 (linear)</td><td>1–6</td><td>Adam SGD</td><td>Linear encoder-decoder</td></tr>
+      <tr><td>CA1</td><td>1–6</td><td>Adam SGD + ReLU</td><td>1 hidden layer [16]</td></tr>
+      <tr><td>CA2</td><td>1–6</td><td>Adam SGD + ReLU</td><td>2 hidden layers [16,8]</td></tr>
+      <tr><td>CA3</td><td>1–6</td><td>Adam SGD + ReLU</td><td>3 hidden layers [16,8,4]</td></tr>
+    </tbody>
+    </table>
+  </div>
+  <div>
+    <h3>CA Model Structure</h3>
+    <div class="arch-diagram">
+      <svg width="400" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+        <!-- Input layer -->
+        <rect x="10" y="30" width="30" height="220" rx="2" fill="#1a3a5c" opacity="0.15" stroke="#1a3a5c" stroke-width="0.5"/>
+        <text x="25" y="20" text-anchor="middle" font-size="8" font-family="'Times New Roman',serif" fill="#333">Input</text>
+        <text x="25" y="145" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#666">87</text>
+
+        <!-- Encoder arrow -->
+        <text x="55" y="105" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#555">Encoder</text>
+        <line x1="40" y1="140" x2="95" y2="140" stroke="#1a3a5c" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+        <!-- Hidden layers -->
+        <rect x="100" y="55" width="20" height="170" rx="2" fill="#5b7fa5" opacity="0.15" stroke="#5b7fa5" stroke-width="0.5"/>
+        <text x="110" y="45" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#333">H1</text>
+        <text x="110" y="145" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#666">16</text>
+
+        <rect x="140" y="70" width="20" height="140" rx="2" fill="#5b7fa5" opacity="0.15" stroke="#5b7fa5" stroke-width="0.5"/>
+        <text x="150" y="60" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#333">H2</text>
+        <text x="150" y="145" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#666">8</text>
+
+        <rect x="180" y="85" width="20" height="110" rx="2" fill="#5b7fa5" opacity="0.15" stroke="#5b7fa5" stroke-width="0.5"/>
+        <text x="190" y="75" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#333">H3</text>
+        <text x="190" y="145" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#666">4</text>
+
+        <!-- Latent factors -->
+        <rect x="220" y="100" width="20" height="80" rx="2" fill="#8b3a3a" opacity="0.2" stroke="#8b3a3a" stroke-width="1"/>
+        <text x="230" y="90" text-anchor="middle" font-size="8" font-family="'Times New Roman',serif" fill="#8b3a3a">β</text>
+        <text x="230" y="145" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#8b3a3a">K</text>
+
+        <!-- Decoder arrow -->
+        <text x="255" y="105" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#555">Decoder</text>
+        <line x1="240" y1="140" x2="285" y2="140" stroke="#8b3a3a" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+        <!-- Output layer (symmetric) -->
+        <rect x="290" y="70" width="20" height="140" rx="2" fill="#1a3a5c" opacity="0.08" stroke="#1a3a5c" stroke-width="0.5"/>
+        <rect x="320" y="55" width="20" height="170" rx="2" fill="#1a3a5c" opacity="0.08" stroke="#1a3a5c" stroke-width="0.5"/>
+        <rect x="350" y="30" width="30" height="220" rx="2" fill="#1a3a5c" opacity="0.15" stroke="#1a3a5c" stroke-width="0.5"/>
+        <text x="365" y="20" text-anchor="middle" font-size="8" font-family="'Times New Roman',serif" fill="#333">Output</text>
+        <text x="365" y="145" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#666">87</text>
+
+        <!-- Factor return label -->
+        <text x="230" y="200" text-anchor="middle" font-size="8" font-family="'Times New Roman',serif" fill="#8b3a3a">Factor Returns f<sub>t</sub></text>
+
+        <!-- Regularization -->
+        <rect x="220" y="220" width="120" height="50" rx="2" fill="none" stroke="#999" stroke-width="0.5" stroke-dasharray="2,2"/>
+        <text x="280" y="238" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#888">Regularization:</text>
+        <text x="280" y="252" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#888">L1 + Early Stopping</text>
+        <text x="280" y="266" text-anchor="middle" font-size="7" font-family="'Times New Roman',serif" fill="#888">+ BatchNorm + Ensemble</text>
+
+        <!-- Arrow marker -->
+        <defs>
+          <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+            <polygon points="0 0, 6 2, 0 4" fill="#1a3a5c"/>
+          </marker>
+        </defs>
+      </svg>
+      <p style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;">
+        CA Model: Encoder (features → latent factor exposures β) → Decoder (β → reconstructed returns) with joint optimization.
+        CA0 = linear (equivalent to IPCA). CA1–CA3 add ReLU hidden layers.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     5. Backtest Methodology
+     ================================================================ -->
+<h2 data-i18n="method.backtest">Backtest Methodology</h2>
+
+<h3>Portfolio Construction</h3>
+<p style="font-size:0.85rem;color:var(--muted);" data-i18n="backtest.formula_caption">Expected return for stock i at month t:</p>
+
+<div style="text-align:center;margin:1.2rem 0;font-size:1rem;">
+  \(\hat{r}_{i,t} = \hat{\beta}_{i,t-1} \cdot \hat{\lambda}_{t-1}\)
+</div>
+
+<p data-i18n="backtest.desc" style="font-size:0.87rem;color:var(--muted);">
+  At each month-end, stocks are sorted into deciles by expected return. The top decile (D10) is held for one month as a long-only portfolio. Monthly rebalancing with a rolling expanding window for λ estimation. λ<sub>t-1</sub> is the rolling mean of factor returns up to month t-1; β<sub>i,t-1</sub> is estimated from the respective model.
+</p>
+
+<h3 data-i18n="backtest.costs">A-Share Transaction Costs (per round-trip ≈ 10.4 bp)</h3>
+<div style="font-size:0.85rem;color:var(--muted);">
+  <table style="max-width:500px;">
+  <thead><tr><th>Fee Type</th><th>Rate</th><th>Side</th></tr></thead>
+  <tbody>
+    <tr><td>Stamp Duty (印花税)</td><td>0.05%</td><td>Sell only</td></tr>
+    <tr><td>Commission (佣金)</td><td>0.025%</td><td>Both sides</td></tr>
+    <tr><td>Transfer Fee (过户费)</td><td>0.002%</td><td>Both sides</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<p style="font-size:0.85rem;color:var(--muted);margin-top:1rem;" data-i18n="backtest.benchmark">
+  Benchmark: CSI 300 Index (沪深300). Weighting: Equal-Weighted (EW) and Value-Weighted (VW). Initial capital: ¥1,000,000. Period: Jan 2020 – Dec 2024.
+</p>
+
+<!-- KaTeX rendering -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  renderMathInElement(document.body, {
+    delimiters: [
+      {left: "\\(", right: "\\)", display: false},
+      {left: "\\[", right: "\\]", display: true},
+    ],
+    throwOnError: false,
+  });
+});
+</script>
+
+</main>
+
+<footer>
+  <p data-i18n="footer.generated">
+    Generated by CAbackend — A-Share Factor Model Backtest Engine
+  </p>
+  <p style="margin-top:0.3rem;">
+    <a href="https://github.com/hcongxi42-web/CAbackend">GitHub</a>
+    &nbsp;·&nbsp; <a href="index.html">Back to Results</a>
+    &nbsp;·&nbsp; <span data-i18n="footer.last_updated">Last updated</span>: 2026-06-28
+  </p>
+</footer>
+
+<script src="js/i18n.js"></script>
+<script src="js/plots.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

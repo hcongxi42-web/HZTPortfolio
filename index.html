@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A-Share Factor Model Backtest — CA Model Portfolio Performance</title>
+<link rel="stylesheet" href="css/academic.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+<body>
+
+<!-- ================================================================
+     Navigation
+     ================================================================ -->
+<nav class="top-nav">
+  <a href="index.html" class="nav-brand">CAbackend</a>
+  <div class="nav-links">
+    <a href="index.html" data-i18n="nav.home">Home</a>
+    <a href="methodology.html" data-i18n="nav.methodology">Methodology</a>
+    <button id="lang-switch-btn" class="lang-switch" data-i18n="nav.lang_switch">中文</button>
+  </div>
+</nav>
+
+<!-- ================================================================
+     Hero
+     ================================================================ -->
+<section class="hero">
+  <h1 data-i18n="hero.title">Conditional Autoencoder Factor Models: Evidence from China's A-Share Market</h1>
+  <p class="author-line" data-i18n="hero.author">Huang Zhongtian · M.Sc. Finance · Jinan University</p>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="stat-value" data-i18n="hero.stat1_val">+312.1%</div>
+      <div class="stat-label" data-i18n="hero.stat1_lbl">CA(1-layer) 5yr Total Return vs CSI 300 +24.2%</div>
+    </div>
+    <div class="hero-stat">
+      <div class="stat-value accent2" data-i18n="hero.stat2_val">Sharpe 1.30</div>
+      <div class="stat-label" data-i18n="hero.stat2_lbl">Highest Annualized Sharpe Ratio</div>
+    </div>
+    <div class="hero-stat">
+      <div class="stat-value" data-i18n="hero.stat3_val">87 Features</div>
+      <div class="stat-label" data-i18n="hero.stat3_lbl">Across 10 Categories of A-Share Characteristics</div>
+    </div>
+  </div>
+
+  <div class="hero-actions">
+    <a href="paper.pdf" class="btn primary" data-i18n="hero.download_pdf">Download PDF</a>
+    <a href="https://github.com/hcongxi42-web/CAbackend" class="btn" target="_blank" data-i18n="hero.github_repo">GitHub Repo</a>
+  </div>
+</section>
+
+<!-- ================================================================
+     Main Content
+     ================================================================ -->
+<main>
+
+<!-- Abstract -->
+<h2 data-i18n="abstract.title">Abstract</h2>
+<p style="font-size:0.9rem;color:var(--muted);line-height:1.75;" data-i18n="abstract.text">
+We systematically evaluate Conditional Autoencoder (CA) asset pricing models in China's A-share market from 2020 to 2024. Using 87 firm characteristics across 10 categories, we compare traditional factor models (FF), PCA, IPCA, and CA models with varying network depths (0–3 hidden layers). CA(1-layer) delivers the strongest investment performance: a 5-year cumulative return of +312.1% (vs. CSI 300's +24.2%) after A-share transaction costs, with an annualized Sharpe ratio of 1.30. IPCA-extracted factors align closely with classical value, size, momentum, and liquidity dimensions. Our findings demonstrate that nonlinear conditional factor models offer both superior predictive power and practical investment value in China's retail-dominated, policy-intensive market environment.
+</p>
+
+<!-- Key Result -->
+<h2 data-i18n="key_result.title">Key Result: Cumulative Return Comparison</h2>
+<div class="chart-card">
+  <div id="key-result-plot" style="width:100%; min-height:450px;"></div>
+  <div class="caption" data-i18n="key_result.caption">
+    CA models outperform CSI 300 by 10×+ at K≥2, after all A-share transaction costs.
+  </div>
+</div>
+
+<!-- Performance Summary -->
+<h2 data-i18n="perf.title">Performance Summary</h2>
+<div id="perf-tables"></div>
+<p style="font-size:0.8rem;color:var(--muted);margin-top:0.5rem;" data-i18n="perf.note">
+Top-decile long-only, monthly rebalancing, value-weighted (VW), after A-share transaction costs (stamp duty 5bp sell-side, commission 2.5bp, transfer fee 0.2bp). FF limited to K ≤ 4. Bold = best in column. Green = positive, Red = negative.
+</p>
+
+<!-- Backtest Charts by K -->
+<h2 data-i18n="results.title">Backtest Charts — Value-Weighted (VW)</h2>
+
+<div class="accordion">
+  <button class="accordion-header open">
+    <span>K = 2 <span class="best-badge" data-i18n="results.best">Best</span></span>
+    <span class="arrow">▶</span>
+  </button>
+  <div class="accordion-body open">
+    <div id="plot-k2" style="width:100%; min-height:600px;"></div>
+  </div>
+  <button class="accordion-header">
+    <span>K = 1</span>
+    <span class="arrow">▶</span>
+  </button>
+  <div class="accordion-body">
+    <div id="plot-k1" style="width:100%; min-height:600px;"></div>
+  </div>
+  <button class="accordion-header">
+    <span>K = 3</span>
+    <span class="arrow">▶</span>
+  </button>
+  <div class="accordion-body">
+    <div id="plot-k3" style="width:100%; min-height:600px;"></div>
+  </div>
+  <button class="accordion-header">
+    <span>K = 4</span>
+    <span class="arrow">▶</span>
+  </button>
+  <div class="accordion-body">
+    <div id="plot-k4" style="width:100%; min-height:600px;"></div>
+  </div>
+  <button class="accordion-header">
+    <span>K = 5</span>
+    <span class="arrow">▶</span>
+  </button>
+  <div class="accordion-body">
+    <div id="plot-k5" style="width:100%; min-height:600px;"></div>
+  </div>
+  <button class="accordion-header">
+    <span>K = 6</span>
+    <span class="arrow">▶</span>
+  </button>
+  <div class="accordion-body">
+    <div id="plot-k6" style="width:100%; min-height:600px;"></div>
+  </div>
+</div>
+
+<!-- Static image fallback section -->
+<h2>Detailed Charts (Static)</h2>
+<p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem;">
+  High-resolution static charts for each K value. For interactive versions, use the accordion panels above.
+</p>
+
+<script>
+// Generate static image gallery dynamically
+const kValues = [1,2,3,4,5,6];
+const chartTypes = [
+  { prefix: 'Fig_Combined', label: 'Combined' },
+  { prefix: 'FigA_CumRet',   label: 'Cumulative Return' },
+  { prefix: 'FigB_Drawdown', label: 'Max Drawdown' },
+  { prefix: 'FigC_MonthlyRet', label: 'Monthly Returns' },
+];
+for (const k of kValues) {
+  document.write('<h3>K = ' + k + '</h3>');
+  document.write('<div class="chart-card"><img src="images/Fig_Combined_K' + k + '_VW_LO.png" alt="Combined K=' + k + '" loading="lazy" style="width:100%;max-width:100%;"><div class="caption">Fig. Combined K=' + k + '</div></div>');
+  document.write('<div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin:0.6rem 0 1.5rem;">');
+  for (const ct of chartTypes.slice(1)) {
+    document.write('<div style="flex:1 1 280px;min-width:0;border:1px solid var(--grid);padding:0.3rem;background:var(--card-bg);"><img src="images/' + ct.prefix + '_K' + k + '_VW_LO.png" alt="' + ct.label + ' K=' + k + '" loading="lazy" style="width:100%;"></div>');
+  }
+  document.write('</div>');
+}
+// K=4 EW
+document.write('<h3>K = 4 — Equal-Weighted (EW)</h3>');
+document.write('<div class="chart-card"><img src="images/Fig_Combined_K4_EW_LO.png" alt="Combined K=4 EW" loading="lazy" style="width:100%;max-width:100%;"><div class="caption">Fig. Combined K=4 (EW)</div></div>');
+document.write('<div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin:0.6rem 0 1.5rem;">');
+for (const ct of chartTypes.slice(1)) {
+  document.write('<div style="flex:1 1 280px;min-width:0;border:1px solid var(--grid);padding:0.3rem;background:var(--card-bg);"><img src="images/' + ct.prefix + '_K4_EW_LO.png" alt="' + ct.label + ' K=4 EW" loading="lazy" style="width:100%;"></div>');
+}
+document.write('</div>');
+</script>
+
+<!-- Methodology Summary -->
+<section style="margin:2.5rem 0;padding:1.5rem;border:1px solid var(--grid);background:var(--card-bg);">
+  <h2>Methodology at a Glance</h2>
+  <div class="process-flow">
+    <div class="process-step">
+      <div class="step-num">1</div>
+      <div class="step-title" data-i18n="process.step1_title">Winsorize</div>
+      <div class="step-desc" data-i18n="process.step1_desc">(5%, 95%) by month</div>
+    </div>
+    <div class="process-arrow">→</div>
+    <div class="process-step">
+      <div class="step-num">2</div>
+      <div class="step-title" data-i18n="process.step2_title">Normalize</div>
+      <div class="step-desc" data-i18n="process.step2_desc">Min-Max to [-1, 1]</div>
+    </div>
+    <div class="process-arrow">→</div>
+    <div class="process-step">
+      <div class="step-num">3</div>
+      <div class="step-title" data-i18n="process.step3_title">Fill Missing</div>
+      <div class="step-desc" data-i18n="process.step3_desc">3-stage hierarchical</div>
+    </div>
+    <div class="process-arrow">→</div>
+    <div class="process-step">
+      <div class="step-num">4</div>
+      <div class="step-title" data-i18n="process.step4_title">Portfolio Construction</div>
+      <div class="step-desc" data-i18n="process.step4_desc">Managed portfolio returns</div>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:1rem;">
+    <a href="methodology.html" style="color:var(--link);font-size:0.9rem;">→ Full methodology, factor classification &amp; descriptive statistics</a>
+  </p>
+</section>
+
+</main>
+
+<footer>
+  <p data-i18n="footer.generated">
+    Generated by CAbackend — A-Share Factor Model Backtest Engine
+  </p>
+  <p style="margin-top:0.3rem;">
+    <a href="https://github.com/hcongxi42-web/CAbackend">GitHub</a>
+    &nbsp;·&nbsp; Style: Academic Journal (Times New Roman, semi-deboxed, low-saturation)
+    &nbsp;·&nbsp; <span data-i18n="footer.last_updated">Last updated</span>: 2026-06-28
+  </p>
+</footer>
+
+<script src="js/i18n.js"></script>
+<script src="js/plots.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
