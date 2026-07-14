@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CA因子模型复现过程 · Reproduction Process</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false});"></script>
+
+<style>
+:root {
+  --ink: #1a2332; --ink-rgb: 26,35,50;
+  --paper: #fafaf5; --paper-rgb: 250,250,245;
+  --accent: #1e4d8c; --accent-rgb: 30,77,140;
+  --accent-on: #ffffff;
+  --grey-1: #f0f0eb; --grey-2: #d4d4cf; --grey-3: #737373;
+  --text-primary: #1a2332; --text-secondary: #525252; --text-helper: #737373;
+  --border-subtle: #e0e0db;
+  --pos: #1a7a1a; --neg: #b02020;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;
+  font-size:18px;line-height:1.6;color:var(--text-primary);background:var(--paper);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  transition:color .4s,background .4s;
+}
+body.low-power *, body.low-power *::before, body.low-power *::after{transition-duration:0s!important;animation-duration:0s!important;animation-delay:0s!important}
+h1,h2,h3,h4,h5,h6{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-weight:600;line-height:1.2;letter-spacing:-0.02em;color:var(--ink)}
+p{margin-bottom:.75em}
+a{color:var(--accent);text-decoration:none}
+code,pre,.mono{font-family:'JetBrains Mono','Consolas',monospace;font-size:.85em}
+body.light-bg{background:var(--paper);color:var(--text-primary)}
+body.dark-bg{background:var(--ink);color:var(--paper)}
+#deck{display:flex;flex-direction:row;flex-wrap:nowrap;height:100vh;will-change:transform;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+body.low-power #deck{transition:none}
+.slide{flex:0 0 100vw;width:100vw;height:100vh;position:relative;overflow:hidden;padding:5vmin 6vmin;display:flex;flex-direction:column;justify-content:center}
+.slide::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.15;background:radial-gradient(ellipse 80% 60% at 50% 40%,var(--accent),transparent)}
+.slide>*{position:relative;z-index:1}
+.chrome{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:.6rem 1.5rem;font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.75rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-helper);border-bottom:1px solid var(--border-subtle);background:rgba(var(--paper-rgb),.85);backdrop-filter:blur(8px)}
+.foot{position:absolute;bottom:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:.5rem 1.5rem;font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.7rem;color:var(--text-helper);border-top:1px solid var(--border-subtle);background:rgba(var(--paper-rgb),.85);backdrop-filter:blur(8px)}
+.title-slide{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-top:8vh;padding-bottom:8vh}
+.title-slide h1{font-size:clamp(2rem,5vw,4rem);font-weight:700;letter-spacing:-0.03em;margin-bottom:.5em}
+.title-slide .subtitle{font-size:clamp(1rem,2vw,1.6rem);font-weight:400;color:var(--text-secondary);margin-bottom:1.5em}
+.affiliation{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.8rem;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--text-helper);margin-top:.5em}
+.abstract-box{margin:1.5em 2em;padding:.8em 1.2em;border-left:3px solid var(--accent);background:var(--grey-1);font-size:.92em;line-height:1.65;color:var(--text-secondary)}
+.abstract-box strong:first-child{display:block;font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.4em}
+.section-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.section-divider .section-num{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:clamp(6rem,12vw,10rem);font-weight:900;line-height:1;color:var(--accent);opacity:.25}
+.section-divider .section-title{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:clamp(1.5rem,3vw,2.5rem);font-weight:600;margin-top:-.5em;color:var(--ink)}
+.citation-block{margin:1em 2em;padding:.8em 1.5em;border-left:2px solid var(--grey-2);font-style:italic;color:var(--text-secondary)}
+.citation-block .cite-src{display:block;margin-top:.6em;font-style:normal;font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.8rem;font-weight:500;color:var(--text-helper);letter-spacing:.04em}
+.ref-list{list-style:none;counter-reset:ref;font-size:.8rem;line-height:1.6;color:var(--text-secondary);padding-left:0}
+.ref-list li{counter-increment:ref;padding-left:2.5em;text-indent:-2.5em;margin-bottom:.35em}
+.ref-list li::before{content:'['counter(ref)']';font-family:'JetBrains Mono',monospace;font-weight:500;color:var(--accent);margin-right:.6em}
+.figure-panel{display:flex;flex-direction:column;align-items:center;margin:1em 0}
+.frame-img{width:100%;overflow:hidden}
+.frame-img img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.fig-caption{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.8rem;font-weight:500;color:var(--text-secondary);margin-top:.5em;text-align:center;letter-spacing:.02em}
+.method-step{counter-increment:method;background:var(--grey-1);border-radius:6px;padding:1.2em;position:relative}
+.method-step::before{content:'0'counter(method);position:absolute;top:.5em;right:.6em;font-family:'Times New Roman',Times,serif;font-size:2.5rem;font-weight:900;color:var(--accent);opacity:.12;line-height:1}
+.method-step h4{font-size:1.05rem;margin-bottom:.3em}
+.method-step p{font-size:.88em;color:var(--text-secondary);margin-bottom:0}
+.result-card{text-align:center;padding:1em}
+.result-card .big-num{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:clamp(1.8rem,4vw,3rem);font-weight:700;line-height:1.1;color:var(--accent)}
+.result-card .desc{font-size:.82rem;color:var(--text-secondary);margin-top:.3em}
+.katex-display{text-align:center;margin:1em 0;font-size:1.1em}
+.grid-2,.grid-3,.grid-4{display:grid;gap:1.2em;width:100%;align-content:center}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+.grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.grid-2-7-5{display:grid;grid-template-columns:7fr 5fr;gap:1.2em;width:100%;align-content:center}
+.grid-2-6-6{display:grid;grid-template-columns:6fr 6fr;gap:1.2em;width:100%;align-content:center}
+.kpi-row{display:flex;justify-content:space-around;align-items:flex-start;gap:1em;flex-wrap:wrap;text-align:center}
+.kpi-row .kpi-val{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:clamp(1.3rem,2.5vw,2rem);font-weight:700;color:var(--accent);line-height:1.2}
+.kpi-row .kpi-label{font-size:.78rem;color:var(--text-helper);letter-spacing:.04em;text-transform:uppercase}
+.r-16x9{aspect-ratio:16/9}.r-16x10{aspect-ratio:16/10}.r-4x3{aspect-ratio:4/3}.r-3x2{aspect-ratio:3/2}.r-1x1{aspect-ratio:1/1}
+.h-hero{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:clamp(2.5rem,6vw,5rem);font-weight:700;letter-spacing:-0.04em;line-height:1.05}
+.h-xl{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:clamp(1.6rem,3.5vw,3rem);font-weight:700;letter-spacing:-0.03em}
+.h-md{font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:clamp(1.1rem,2vw,1.6rem);font-weight:600;letter-spacing:-0.02em}
+.lead{font-size:1.15em;line-height:1.7;color:var(--text-secondary)}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.4em}
+.meta-row{display:flex;gap:1.5em;flex-wrap:wrap;font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.78rem;color:var(--text-helper);letter-spacing:.04em}
+.tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:.15em .5em}
+.callout{margin:1em 0;padding:.8em 1.2em;background:var(--grey-1);border-radius:4px;font-size:.9em;color:var(--text-secondary);line-height:1.7}
+.callout-src{display:block;margin-top:.5em;font-family:'Times New Roman','Microsoft YaHei','微软雅黑',Times,serif;font-size:.75rem;font-weight:600;color:var(--text-helper);letter-spacing:.04em}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+table.data-table{width:100%;border-collapse:collapse;font-size:.78rem;margin:.5em 0}
+table.data-table th{background:var(--grey-1);font-weight:600;color:var(--accent);padding:.4em .5em;text-align:center;border-bottom:2px solid var(--grey-2);font-size:.75rem;letter-spacing:.03em}
+table.data-table td{padding:.35em .5em;text-align:center;border-bottom:1px solid var(--border-subtle)}
+table.data-table tr:last-child td{border-bottom:2px solid var(--ink)}
+table.data-table .best{font-weight:700;background:#fef9e7}
+#overview{display:none;position:fixed;inset:0;z-index:1000;background:rgba(var(--ink-rgb),.92);overflow-y:auto;padding:2vmin}
+#overview.active{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5vmin;align-content:start}
+#overview .ov-thumb{aspect-ratio:16/9;background:var(--grey-1);border:2px solid transparent;border-radius:4px;cursor:pointer;overflow:hidden;position:relative;transition:border-color .2s;font-size:.45rem;display:flex;align-items:center;justify-content:center}
+#overview .ov-thumb:hover,#overview .ov-thumb.active{border-color:var(--accent)}
+#overview .ov-num{font-family:'Times New Roman',Times,serif;font-size:1.2rem;font-weight:700;color:var(--paper);opacity:.4}
+#nav{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:.45rem}
+#nav .dot{width:8px;height:8px;border-radius:50%;background:var(--grey-2);cursor:pointer;transition:background .25s,transform .25s}
+#nav .dot:hover{transform:scale(1.35)}
+#nav .dot.active{background:var(--accent);transform:scale(1.2)}
+#hint{position:fixed;bottom:1.2rem;right:1.5rem;z-index:100;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text-helper);opacity:.55;pointer-events:none}
+.pipeline-step{opacity:.15;transition:opacity .5s}
+.pipeline-step.revealed{opacity:1}
+@media(max-width:768px){
+  .slide{padding:4vmin 3vmin}
+  #overview.active{grid-template-columns:repeat(2,1fr)}
+  .grid-3,.grid-4{grid-template-columns:1fr 1fr}
+  table.data-table{font-size:.65rem}
+}
+</style>
+</head>
+<body class="light-bg">
+
+<!-- ================================================================
+     DECK
+     ================================================================ -->
+<div id="deck">
+
+  <!-- ──────────────────────────────────────────
+       Slide 1: Title
+       ────────────────────────────────────────── -->
+  <section class="slide title-slide" data-theme="light">
+    <div class="kicker">JINAN UNIVERSITY · QUANTITATIVE FINANCE</div>
+    <h1>条件自编码器(CA)因子模型<br>复现过程</h1>
+    <p class="lead">Conditional Autoencoder Factor Models: Reproduction Pipeline<br>A-Share Market · 2011-2024</p>
+    <div class="affiliation">黄中天 · 金融硕士 · 暨南大学经济学院 &nbsp;|&nbsp; 2026年7月</div>
+    <div class="meta-row" style="margin-top:1em">
+      <span>数据: CSMAR + RESSET</span>
+      <span>5447 Stocks</span>
+      <span>87 Characteristics</span>
+      <span>7 Models</span>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 2: Overview / Motivation
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">概览</span>
+      <span class="chrome-right">2 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.5em">为什么复现这篇研究？</h2>
+    <div class="abstract-box">
+      <strong>研究目标</strong>
+      使用条件自编码器 (Conditional Autoencoder) 深度神经网络，对中国A股市场5000+只股票进行因子建模与量化回测。验证非线性方法能否超越传统线性因子模型（FF、PCA、IPCA），并从经济学角度解释模型提取的因子含义。
+    </div>
+    <div class="grid-2" style="margin-top:1em">
+      <div>
+        <h3 class="h-md">核心创新</h3>
+        <p>编码器将87个公司特征非线性映射为时变因子暴露 beta，解码器从收益数据提取潜在因子，联合优化——这是传统两步法（先估计暴露、再估计因子收益）无法实现的。</p>
+      </div>
+      <div>
+        <h3 class="h-md">复现范围</h3>
+        <p>完整覆盖：数据采集->特征工程->7类模型训练(K=1~6)->样本外回测(2020-2024)->预测精度评估->因子归因->稳健性检验->异质性分析。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 3: Section Divider — Data
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">01</div>
+    <div class="section-title">数据获取与处理<br>Data Acquisition &amp; Processing</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 4: Data Pipeline
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">01 · 数据</span>
+      <span class="chrome-right">4 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.6em">数据处理流水线</h2>
+    <div class="grid-4">
+      <div class="method-step">
+        <h4>1. 数据采集</h4>
+        <p>CSMAR + RESSET 数据库<br>A股5447只股票<br>2011.01 - 2024.12<br>日频+月频数据</p>
+      </div>
+      <div class="method-step">
+        <h4>2. 缩尾处理</h4>
+        <p>月度5%/95%分位数缩尾<br>Winsorize by month<br>消除极端值干扰<br>保留分布形态</p>
+      </div>
+      <div class="method-step">
+        <h4>3. 标准化</h4>
+        <p>Min-Max归一化至[-1,1]<br>月度截面标准化<br>消除量纲差异<br>适配神经网络输入</p>
+      </div>
+      <div class="method-step">
+        <h4>4. 缺失值填充</h4>
+        <p>三阶段分层填充策略<br>行业中位数->市场中位数->0<br>最大保留样本量<br>避免信息损失</p>
+      </div>
+    </div>
+    <div style="margin-top:1.5em;text-align:center">
+      <span class="tag">CSMAR</span>
+      <span class="tag" style="margin-left:.4em">RESSET</span>
+      <span class="tag" style="margin-left:.4em">Python/pandas</span>
+      <span class="tag" style="margin-left:.4em">NumPy</span>
+      <span class="tag" style="margin-left:.4em">14年跨度</span>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 5: Section Divider — Factors
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">02</div>
+    <div class="section-title">因子体系构建<br>Factor Construction</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 6: Factor Characteristics
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">02 · 因子</span>
+      <span class="chrome-right">6 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.4em">87个特征因子 · 10大经济分类</h2>
+    <table class="data-table" style="font-size:.72rem;">
+    <thead><tr><th>分类</th><th>特征数量</th><th>代表特征</th><th>经济含义</th></tr></thead>
+    <tbody>
+    <tr><td style="text-align:left">估值与盈利</td><td>12</td><td>bm, ep, cfp, sp</td><td>价值因子核心</td></tr>
+    <tr><td style="text-align:left">成长与投资</td><td>9</td><td>inv, noa, dpi2a, igr</td><td>Fama-French投资因子</td></tr>
+    <tr><td style="text-align:left">风险与杠杆</td><td>10</td><td>beta, idiovol, lev, currat</td><td>市场风险与财务风险</td></tr>
+    <tr><td style="text-align:left">动量</td><td>8</td><td>mom12m, mom6m, indmom</td><td>趋势追踪</td></tr>
+    <tr><td style="text-align:left">流动性交易</td><td>9</td><td>turn, zerotrade, illiq</td><td>Amihud非流动性</td></tr>
+    <tr><td style="text-align:left">会计质量</td><td>11</td><td>acc, absacc, cf, earn</td><td>应计异象</td></tr>
+    <tr><td style="text-align:left">运营效率</td><td>8</td><td>ato, gmar, roe, roa</td><td>盈利能力</td></tr>
+    <tr><td style="text-align:left">情绪与行为</td><td>7</td><td>maxret, retvol, skew</td><td>彩票效应/波动率异象</td></tr>
+    <tr><td style="text-align:left">每股指标</td><td>7</td><td>eps, cfps, dps</td><td>每股基本面</td></tr>
+    <tr><td style="text-align:left">技术指标</td><td>6</td><td>rsi, bollinger, ma20</td><td>技术面信号</td></tr>
+    </tbody>
+    </table>
+    <p style="text-align:right;font-size:.78rem;margin-top:.4em">
+      <a href="因子构建公式.docx">点击查看详细因子构建公式</a>
+    </p>
+    <div class="foot">
+      <span>CSMAR + RESSET · 2011-2024</span>
+      <span>87 Firm Characteristics</span>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 7: Section Divider — Models
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">03</div>
+    <div class="section-title">模型架构设计<br>Model Architecture</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 8: Model Architecture
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">03 · 模型</span>
+      <span class="chrome-right">8 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.5em">7类模型系统对比</h2>
+    <table class="data-table">
+    <thead><tr><th>模型</th><th>K范围</th><th>估计方法</th><th>参数/结构</th><th>特点</th></tr></thead>
+    <tbody>
+    <tr><td style="text-align:left">FF (CH4)</td><td>1-4</td><td>Fama-MacBeth两步</td><td>4因子</td><td>中国市场配适版</td></tr>
+    <tr><td style="text-align:left">PCA</td><td>1-6</td><td>渐近主成分</td><td>无参数</td><td>无监督统计因子</td></tr>
+    <tr><td style="text-align:left">IPCA</td><td>1-6</td><td>交替最小二乘(ALS)</td><td>线性映射</td><td>特征->暴露线性</td></tr>
+    <tr class="best"><td style="text-align:left"><strong>CA (linear)</strong></td><td>1-6</td><td>Adam SGD</td><td>0隐藏层</td><td>等价IPCA</td></tr>
+    <tr class="best"><td style="text-align:left"><strong>CA (1-layer)</strong></td><td>1-6</td><td>Adam+ReLU</td><td>1x[16]</td><td><strong>最优表现</strong></td></tr>
+    <tr><td style="text-align:left">CA (2-layer)</td><td>1-6</td><td>Adam+ReLU</td><td>2x[16,8]</td><td>中等深度</td></tr>
+    <tr><td style="text-align:left">CA (3-layer)</td><td>1-6</td><td>Adam+ReLU</td><td>3x[16,8,4]</td><td>最深网络</td></tr>
+    </tbody>
+    </table>
+    <div class="callout" style="margin-top:.8em">
+      CA架构: 编码器 Encoder(87特征 -> beta_1...beta_K) + 解码器 Decoder(beta_1...beta_K -> 87特征重构)
+      <span class="callout-src">训练: 递归扩展窗口 2011-2019 train / 2020-2024 test · 正则化: L1 + Early Stopping + BatchNorm + 10种子集成</span>
+    </div>
+    <div class="foot">
+      <span>PyTorch · CUDA/GPU</span>
+      <span>CA0-CA3 saved as .pt models (24 files)</span>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 9: Section Divider — Training
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">04</div>
+    <div class="section-title">训练与回测设计<br>Training &amp; Backtest Design</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 10: Training + Backtest
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">04 · 训练</span>
+      <span class="chrome-right">10 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.5em">训练流程与回测方法</h2>
+    <div class="grid-2">
+      <div>
+        <h3 class="h-md">递归扩展窗口训练</h3>
+        <div class="abstract-box" style="margin:.5em 0;font-size:.85em">
+          <strong>训练期:</strong> 2011.01 - 2019.12 (9年)<br>
+          <strong>测试期:</strong> 2020.01 - 2024.12 (5年)<br>
+          <strong>方式:</strong> 每年重新训练，窗口逐年扩展<br>
+          <strong>优化:</strong> Adam, lr=0.001, Dropout=0.5<br>
+          <strong>正则:</strong> L1惩罚 + Early Stopping(patience=5)
+        </div>
+        <div class="katex-display">
+          $$\hat{r}_{i,t} = \hat{\beta}_{i,t-1} \cdot \hat{\lambda}_{t-1}$$
+        </div>
+      </div>
+      <div>
+        <h3 class="h-md">回测设计</h3>
+        <ul style="font-size:.85em;line-height:1.8;color:var(--text-secondary);padding-left:1.2em">
+          <li>每月末: 预期收益 = 因子暴露 x 因子收益均值</li>
+          <li>全市场股票按预期收益等分十组</li>
+          <li><strong>买入最高组 (Top-Decile, 仅做多)</strong></li>
+          <li>持有一个月 -> 全部卖出 -> 重新排序换仓</li>
+          <li>2020.01 - 2024.12，共60个月</li>
+          <li>加权方式: 等权(EW) + 市值加权(VW)</li>
+        </ul>
+        <div class="kpi-row" style="margin-top:1em">
+          <div><div class="kpi-val">0.05%</div><div class="kpi-label">印花税(卖方)</div></div>
+          <div><div class="kpi-val">0.025%</div><div class="kpi-label">佣金(双向)</div></div>
+          <div><div class="kpi-val">0.002%</div><div class="kpi-label">过户费(双向)</div></div>
+          <div><div class="kpi-val">~10.4bp</div><div class="kpi-label">每轮总成本</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 11: Section Divider — Results
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">05</div>
+    <div class="section-title">核心回测结果<br>Backtest Results</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 12: Key Results — EW Performance
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">05 · 结果</span>
+      <span class="chrome-right">12 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.3em">等权表现汇总（2020.01-2024.12，扣费后）</h2>
+    <div class="kpi-row" style="margin-bottom:.8em">
+      <div><div class="kpi-val" style="color:#b02020">+591.5%</div><div class="kpi-label">CA1累计收益(EW)</div></div>
+      <div><div class="kpi-val">1.86</div><div class="kpi-label">CA1年化夏普</div></div>
+      <div><div class="kpi-val">-20.9%</div><div class="kpi-label">CA1最大回撤</div></div>
+      <div><div class="kpi-val">+24.2%</div><div class="kpi-label">沪深300累计收益</div></div>
+    </div>
+    <table class="data-table" style="font-size:.8rem;">
+    <thead><tr><th>模型</th><th>累计收益(%)</th><th>年化夏普</th><th>最大回撤(%)</th></tr></thead>
+    <tbody>
+    <tr><td>FF (CH4)</td><td class="neg">-43.1</td><td class="neg">-0.41</td><td class="neg">-62.9</td></tr>
+    <tr><td>PCA</td><td class="neg">-25.2</td><td class="neg">-0.29</td><td class="neg">-44.5</td></tr>
+    <tr><td>IPCA</td><td class="pos">+117.4</td><td class="pos">+0.79</td><td class="neg">-21.6</td></tr>
+    <tr><td>CA0</td><td class="pos">+121.7</td><td class="pos">+0.84</td><td class="neg">-17.9</td></tr>
+    <tr class="best"><td>CA1</td><td class="pos">+591.5</td><td class="pos">+1.86</td><td class="neg">-20.9</td></tr>
+    <tr><td style="border-top:2px solid var(--ink)">沪深300</td><td class="pos" style="border-top:2px solid var(--ink)">+24.2</td><td class="pos" style="border-top:2px solid var(--ink)">+0.25</td><td class="neg" style="border-top:2px solid var(--ink)">-26.0</td></tr>
+    </tbody>
+    </table>
+    <p style="font-size:.75rem;color:var(--text-helper);margin-top:.3em;text-align:center">
+      Top-Decile仅做多 · 月度调仓 · 扣除A股实际交易成本 · 基准: 沪深300
+    </p>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 13: VW Results
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">05 · 结果</span>
+      <span class="chrome-right">13 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.3em">市值加权结果（K=1~6详表）</h2>
+    <table class="data-table" style="font-size:.72rem;">
+    <thead><tr><th>模型</th><th>K=1</th><th>K=2</th><th>K=3</th><th>K=4</th><th>K=5</th><th>K=6</th></tr></thead>
+    <tbody>
+    <tr><td style="text-align:left">FF (CH4)</td><td class="neg">-41.2</td><td class="neg">-40.3</td><td class="neg">-34.3</td><td class="neg">-31.1</td><td>-</td><td>-</td></tr>
+    <tr><td style="text-align:left">PCA</td><td class="neg">-21.5</td><td class="neg">-38.3</td><td class="neg">-35.7</td><td class="neg">-35.8</td><td class="neg">-41.4</td><td class="neg">-33.2</td></tr>
+    <tr><td style="text-align:left">IPCA</td><td class="neg">-32.6</td><td class="pos">+202.6</td><td class="pos">+177.1</td><td class="pos">+150.1</td><td class="pos">+170.0</td><td class="pos">+199.7</td></tr>
+    <tr><td style="text-align:left">CA0</td><td class="neg">-28.3</td><td class="pos">+195.1</td><td class="pos">+99.9</td><td class="pos">+144.0</td><td class="pos">+160.8</td><td class="pos">+178.5</td></tr>
+    <tr class="best"><td style="text-align:left"><strong>CA1</strong></td><td class="neg">-22.0</td><td class="pos">+312.1</td><td class="pos">+249.3</td><td class="pos">+291.8</td><td class="pos">+262.5</td><td class="pos">+176.3</td></tr>
+    <tr><td style="text-align:left">CA2</td><td class="neg">-18.5</td><td class="pos">+245.0</td><td class="pos">+200.1</td><td class="pos">+235.5</td><td class="pos">+210.3</td><td class="pos">+160.2</td></tr>
+    <tr><td style="text-align:left">CA3</td><td class="neg">-20.1</td><td class="pos">+220.3</td><td class="pos">+185.6</td><td class="pos">+210.4</td><td class="pos">+190.7</td><td class="pos">+155.8</td></tr>
+    </tbody>
+    </table>
+    <p style="font-size:.75rem;color:var(--text-helper);margin-top:.3em;text-align:center">
+      累计收益(%) · VW · 加粗=列最优 · 绿=正收益 · 红=负收益 · FF限K≤4 · 沪深300: +24.2%所有K
+    </p>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 14: Section Divider — Prediction
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">06</div>
+    <div class="section-title">预测能力验证<br>Prediction Accuracy</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 15: Prediction Analysis
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">06 · 预测</span>
+      <span class="chrome-right">15 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.4em">两级预测精度评估</h2>
+    <div class="grid-2">
+      <div>
+        <h3 class="h-md">个股层面预测</h3>
+        <div class="figure-panel" style="margin:.3em 0">
+          <div class="frame-img r-16x9" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
+            <img src="images/Individual_Pred.png" alt="个股预测" style="object-fit:contain;width:100%;height:100%">
+          </div>
+        </div>
+        <p style="font-size:.82em">Predicted vs Realized Returns 散点矩阵<br>CA1在所有K值下R²最高</p>
+      </div>
+      <div>
+        <h3 class="h-md">组合层面预测 (GKX)</h3>
+        <div class="figure-panel" style="margin:.3em 0">
+          <div class="frame-img r-16x9" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
+            <img src="images/Portfolio_Pred_GKX.png" alt="组合预测" style="object-fit:contain;width:100%;height:100%">
+          </div>
+        </div>
+        <p style="font-size:.82em">Predicted vs Realized 时序跟踪<br>CA1预测值与实际收益跟踪最紧</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:.5em;text-align:center">
+      CA1在个股和组合两个层面均展现最优预测力——非线性编码捕获了线性模型遗漏的收益相关信息
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 16: Section Divider — Factors
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">07</div>
+    <div class="section-title">因子归因与诊断<br>Factor Attribution &amp; Diagnostics</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 17: Factor Analysis
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">07 · 因子</span>
+      <span class="chrome-right">17 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.4em">特征重要性与定价误差</h2>
+    <div class="grid-2">
+      <div>
+        <div class="figure-panel" style="margin:0">
+          <div class="frame-img r-4x3" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
+            <img src="images/importance_normalized.png" alt="特征重要性" style="object-fit:contain;width:100%;height:100%">
+          </div>
+          <div class="fig-caption">归一化特征重要性热力图<br>跨模型x因子的特征驱动分布</div>
+        </div>
+      </div>
+      <div>
+        <div class="figure-panel" style="margin:0">
+          <div class="frame-img r-4x3" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
+            <img src="images/pricing_errors_lagged.png" alt="定价误差" style="object-fit:contain;width:100%;height:100%">
+          </div>
+          <div class="fig-caption">定价误差诊断<br>滞后特征 vs Post-Formation Alpha</div>
+        </div>
+      </div>
+    </div>
+    <div class="abstract-box" style="margin:.6em 1em;font-size:.82em">
+      <strong>诊断结论</strong>
+      CA1的预测由跨维度特征集合驱动(价值+动量+质量+风险)，非单一过拟合。定价误差分析显示滞后特征不能系统解释post-formation alpha = 无遗漏变量偏差。
+    </div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 18: Section Divider — Robustness
+       ────────────────────────────────────────── -->
+  <section class="slide section-divider" data-theme="light">
+    <div class="section-num">08</div>
+    <div class="section-title">稳健性与异质性<br>Robustness &amp; Heterogeneity</div>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 19: Robustness
+       ────────────────────────────────────────── -->
+  <section class="slide" data-theme="light">
+    <div class="chrome">
+      <span class="chrome-left">08 · 稳健性</span>
+      <span class="chrome-right">19 / 19</span>
+    </div>
+    <h2 class="h-xl" style="margin-bottom:.5em">三项稳健性检验 + 行业异质性</h2>
+    <div class="grid-3" style="margin-bottom:.8em">
+      <div class="method-step">
+        <h4>缺失值阈值</h4>
+        <p>替换阈值 10/14/18<br>模型相对排序稳定<br>CA0/CA1始终最优</p>
+      </div>
+      <div class="method-step">
+        <h4>小市值剔除</h4>
+        <p>剔除市值最小30%<br>Liu et al. (2019)<br>去除壳价值污染<br>CA优势持续</p>
+      </div>
+      <div class="method-step">
+        <h4>缩短训练期</h4>
+        <p>9年->5年训练窗口<br>深层网络过拟合加剧<br>CA0/CA1样本效率最优</p>
+      </div>
+    </div>
+    <h3 class="h-md" style="margin-bottom:.3em">行业异质性分析</h3>
+    <div class="grid-3">
+      <div class="result-card" style="background:var(--grey-1);border-radius:4px">
+        <div class="big-num" style="font-size:1.6rem">制造业</div>
+        <div class="desc">正向超额收益</div>
+      </div>
+      <div class="result-card" style="background:var(--grey-1);border-radius:4px">
+        <div class="big-num" style="font-size:1.6rem">金融业</div>
+        <div class="desc">正向超额收益</div>
+      </div>
+      <div class="result-card" style="background:var(--grey-1);border-radius:4px">
+        <div class="big-num" style="font-size:1.6rem">科技/消费</div>
+        <div class="desc">正向超额收益</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:.78rem;color:var(--text-helper);margin-top:.6em">
+      CA提取的因子具备跨行业定价能力，非个别行业驱动 · 完整检验细节请参见论文PDF
+    </p>
+  </section>
+
+  <!-- ──────────────────────────────────────────
+       Slide 20: Thanks
+       ────────────────────────────────────────── -->
+  <section class="slide title-slide" data-theme="light">
+    <h1 style="font-size:clamp(2rem,5vw,3.5rem)">复现总结</h1>
+    <p class="lead">完整覆盖: 数据->因子->模型->回测->预测评估->归因->稳健性->异质性</p>
+    <div class="kpi-row" style="margin:1.5em 0">
+      <div><div class="kpi-val">5447</div><div class="kpi-label">股票</div></div>
+      <div><div class="kpi-val">87</div><div class="kpi-label">特征因子</div></div>
+      <div><div class="kpi-val">7</div><div class="kpi-label">模型</div></div>
+      <div><div class="kpi-val">42</div><div class="kpi-label">K值组合</div></div>
+      <div><div class="kpi-val">60</div><div class="kpi-label">回测月份</div></div>
+    </div>
+    <div class="callout" style="max-width:32em;text-align:left">
+      <strong>核心技术栈:</strong> Python + PyTorch + pandas + NumPy + CUDA/GPU<br>
+      <strong>数据来源:</strong> CSMAR, RESSET (2011.01-2024.12)<br>
+      <strong>关键结论:</strong> CA(1-layer)在所有K值、两种加权方式下均为最优模型<br>
+      <strong>可复现性:</strong> 代码+数据+模型参数均可在GitHub获取
+    </div>
+    <div class="affiliation" style="margin-top:1.5em">
+      黄中天 · 暨南大学经济学院 · <a href="https://github.com/hcongxi42-web/HZTPortfolio">GitHub:HZTPortfolio</a>
+    </div>
+  </section>
+
+</div><!-- /#deck -->
+
+<div id="nav"></div>
+<div id="hint"></div>
+<div id="overview"></div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script type="module">
+import { animate, stagger, inView, timeline } from './motion.min.js';
+window.Motion = { animate, stagger, inView, timeline };
+</script>
+<script nomodule src="https://cdn.jsdelivr.net/npm/motion@11.18.2/dist/motion.min.js"></script>
+
+<script>
+(function(){
+  'use strict';
+
+  const deck = document.getElementById('deck');
+  const nav  = document.getElementById('nav');
+  const hint = document.getElementById('hint');
+  const overview = document.getElementById('overview');
+
+  let slides=[], total=0, current=0, locked=false;
+  let lowPower = localStorage.getItem('ppt-low-power') === '1';
+  let overviewOn = false;
+  let pipelineSteps=[], pipelineRevealed=[];
+
+  function init(){
+    slides = Array.from(deck.querySelectorAll('.slide'));
+    total  = slides.length;
+    if(total === 0) return;
+    deck.style.width = (total * 100) + 'vw';
+    pipelineSteps    = new Array(total).fill(0);
+    pipelineRevealed = new Array(total).fill(0);
+    slides.forEach(function(s,i){
+      var steps = s.querySelectorAll('.pipeline-step');
+      pipelineSteps[i] = steps.length;
+      if(steps.length === 0) pipelineRevealed[i] = -1;
+    });
+    nav.innerHTML = '';
+    for(var i=0;i<total;i++){
+      var d = document.createElement('span');
+      d.className = 'dot';
+      d.setAttribute('data-index', i);
+      d.addEventListener('click', function(e){ go(parseInt(this.getAttribute('data-index'))); });
+      nav.appendChild(d);
+    }
+    if(lowPower) document.body.classList.add('low-power');
+    updateHint();
+    go(0);
+  }
+
+  function go(n, instant){
+    if(n < 0 || n >= total) return;
+    if(locked && !instant) return;
+    if(!instant && !overviewOn && pipelineRevealed[current] >= 0 && pipelineRevealed[current] < pipelineSteps[current]){
+      revealNextPipelineStep(current);
+      return;
+    }
+    current = n;
+    var targetSlide = deck.children[current];
+    if(targetSlide){
+      targetSlide.querySelectorAll('[data-anim]').forEach(function(el){
+        el.classList.remove('anim-done');
+        el.style.opacity = '0';
+      });
+    }
+    deck.style.transform = 'translateX(' + (-current * 100) + 'vw)';
+    var dots = nav.querySelectorAll('.dot');
+    dots.forEach(function(d,i){ d.classList.toggle('active', i === current); });
+    var thumbs = overview.querySelectorAll('.ov-thumb');
+    thumbs.forEach(function(t,i){ t.classList.toggle('active', i === current); });
+    var theme = slides[current].getAttribute('data-theme');
+    document.body.classList.toggle('light-bg', theme !== 'dark');
+    document.body.classList.toggle('dark-bg', theme === 'dark');
+    lock(700);
+    setTimeout(function(){ playSlide(current); }, 450);
+  }
+
+  function lock(ms){
+    locked = true;
+    clearTimeout(lock._tid);
+    lock._tid = setTimeout(function(){ locked = false; }, ms);
+  }
+
+  function revealNextPipelineStep(idx){
+    var steps = slides[idx].querySelectorAll('.pipeline-step');
+    var revealed = pipelineRevealed[idx];
+    if(revealed < steps.length){
+      steps[revealed].classList.add('revealed');
+      pipelineRevealed[idx] = revealed + 1;
+      lock(400);
+    }
+  }
+
+  function resetPipeline(idx){
+    var steps = slides[idx].querySelectorAll('.pipeline-step');
+    steps.forEach(function(s){ s.classList.remove('revealed'); });
+    pipelineRevealed[idx] = 0;
+  }
+
+  function playSlide(idx){
+    if(lowPower) return;
+    var slide = slides[idx];
+    var isHero = slide.classList.contains('title-slide') || slide.classList.contains('section-divider');
+    var hasPipeline = pipelineSteps[idx] > 0;
+    if(hasPipeline){
+      resetPipeline(idx);
+      var steps = slide.querySelectorAll('.pipeline-step');
+      if(steps.length > 0){
+        steps[0].classList.add('revealed');
+        pipelineRevealed[idx] = 1;
+      }
+      return;
+    }
+    var targets = Array.from(slide.children).filter(function(el){
+      return !el.classList.contains('chrome') && !el.classList.contains('foot');
+    });
+    if(targets.length === 0) return;
+    targets.forEach(function(el){ el.style.opacity = '0'; el.style.transform = 'translateY(20px)'; });
+    var delay = isHero ? 160 : 75;
+    if(typeof window.Motion !== 'undefined' && window.Motion.animate){
+      var Motion = window.Motion;
+      if(slide.querySelector('.citation-block') && !isHero){
+        var nonQuotes = targets.filter(function(t){ return !t.classList.contains('citation-block'); });
+        var quotes    = targets.filter(function(t){ return t.classList.contains('citation-block'); });
+        if(nonQuotes.length > 0){
+          Motion.animate(nonQuotes,
+            { opacity: [0,1], transform: ['translateY(20px)','translateY(0px)'] },
+            { duration: .55, delay: Motion.stagger(75), easing: [.4,0,.2,1] }
+          );
+        }
+        if(quotes.length > 0){
+          Motion.animate(quotes,
+            { opacity: [0,1], transform: ['translateY(20px)','translateY(0px)'] },
+            { duration: .55, delay: 0.55, easing: [.4,0,.2,1] }
+          );
+        }
+      } else {
+        Motion.animate(targets,
+          { opacity: [0,1], transform: ['translateY(20px)','translateY(0px)'] },
+          { duration: .55, delay: Motion.stagger(delay), easing: [.4,0,.2,1] }
+        );
+      }
+    } else {
+      targets.forEach(function(el,i){
+        el.style.transition = 'opacity .5s, transform .5s';
+        el.style.transitionDelay = (i * (delay/1000)) + 's';
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      });
+    }
+  }
+
+  function toggleOverview(){
+    overviewOn = !overviewOn;
+    if(overviewOn){
+      buildOverview();
+      overview.classList.add('active');
+    } else {
+      overview.classList.remove('active');
+      go(current, true);
+    }
+  }
+
+  function buildOverview(){
+    overview.innerHTML = '';
+    slides.forEach(function(s,i){
+      var thumb = document.createElement('div');
+      thumb.className = 'ov-thumb' + (i === current ? ' active' : '');
+      thumb.innerHTML = '<span class="ov-num">' + (i+1) + '</span>';
+      thumb.addEventListener('click', function(){
+        overviewOn = false;
+        overview.classList.remove('active');
+        go(i, true);
+      });
+      overview.appendChild(thumb);
+    });
+  }
+
+  function toggleLowPower(){
+    lowPower = !lowPower;
+    localStorage.setItem('ppt-low-power', lowPower ? '1' : '0');
+    document.body.classList.toggle('low-power', lowPower);
+    updateHint();
+  }
+
+  function updateHint(){
+    hint.textContent = lowPower ? 'B 动态' : 'B 静态';
+  }
+
+  window.pipeAdvance = function(){
+    if(pipelineRevealed[current] >= 0 && pipelineRevealed[current] < pipelineSteps[current]){
+      revealNextPipelineStep(current);
+    } else {
+      go(current + 1);
+    }
+  };
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ e.preventDefault(); toggleOverview(); return; }
+    if(e.key === 'b' || e.key === 'B'){ e.preventDefault(); toggleLowPower(); return; }
+    if(overviewOn){
+      if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); go(Math.min(current+1, total-1), true); buildOverview(); }
+      if(e.key === 'ArrowLeft'  || e.key === 'ArrowUp')  { e.preventDefault(); go(Math.max(current-1, 0), true); buildOverview(); }
+      return;
+    }
+    if(e.key === 'ArrowRight' || e.key === 'PageDown'){ e.preventDefault(); pipeAdvance(); }
+    if(e.key === 'ArrowLeft'  || e.key === 'PageUp')  { e.preventDefault(); go(current-1); }
+    if(e.key === ' ' || e.key === 'Spacebar'){ e.preventDefault(); pipeAdvance(); }
+    if(e.key === 'Home'){ e.preventDefault(); go(0); }
+    if(e.key === 'End') { e.preventDefault(); go(total-1); }
+  });
+
+  var scrollAccum = 0;
+  document.addEventListener('wheel', function(e){
+    if(overviewOn) return;
+    e.preventDefault();
+    scrollAccum += e.deltaY;
+    if(scrollAccum > 50){ scrollAccum = 0; pipeAdvance(); }
+    if(scrollAccum < -50){ scrollAccum = 0; go(current-1); }
+  }, {passive:false});
+
+  var touchX = 0;
+  document.addEventListener('touchstart', function(e){ touchX = e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if(overviewOn) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    if(Math.abs(dx) > 60){
+      if(dx < 0) pipeAdvance();
+      else go(current-1);
+    }
+  });
+
+  window.go = go;
+  window.toggleOverview = toggleOverview;
+  window.playSlide = playSlide;
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+</body>
+</html>
