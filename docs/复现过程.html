@@ -422,29 +422,22 @@ table.data-table .best{font-weight:700;background:#fef9e7}
       <span class="chrome-left">06 · 预测</span>
       <span class="chrome-right">15 / 19</span>
     </div>
-    <h2 class="h-xl" style="margin-bottom:.4em">两级预测精度评估</h2>
-    <div class="grid-2">
-      <div>
-        <h3 class="h-md">个股层面预测</h3>
-        <div class="figure-panel" style="margin:.3em 0">
-          <div class="frame-img r-16x9" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
-            <img src="images/Individual_Pred.png" alt="个股预测" style="object-fit:cover;width:100%;height:100%">
-          </div>
+    <h2 class="h-xl" style="margin-bottom:.3em">两级预测精度评估</h2>
+    <div style="flex:1;display:flex;flex-direction:column;gap:.5em;overflow:hidden">
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <h3 class="h-md" style="margin-bottom:.15em">个股层面预测: Predicted vs Realized Returns (全模型xK值)</h3>
+        <div style="flex:1;min-height:0;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img src="images/Individual_Pred.png" alt="个股预测" style="width:100%;height:100%;object-fit:contain">
         </div>
-        <p style="font-size:.82em">Predicted vs Realized Returns 散点矩阵<br>CA1在所有K值下R²最高</p>
+        <p style="font-size:.75rem;color:var(--text-helper);text-align:center;margin:.1em 0 0 0">CA1在所有K值下R²最高 — 非线性编码捕获了线性模型遗漏的收益相关信息</p>
       </div>
-      <div>
-        <h3 class="h-md">组合层面预测 (GKX)</h3>
-        <div class="figure-panel" style="margin:.3em 0">
-          <div class="frame-img r-16x9" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
-            <img src="images/Portfolio_Pred_GKX.png" alt="组合预测" style="object-fit:cover;width:100%;height:100%">
-          </div>
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <h3 class="h-md" style="margin-bottom:.15em">组合层面预测 (GKX方法): Predicted vs Realized Portfolio Returns</h3>
+        <div style="flex:1;min-height:0;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img src="images/Portfolio_Pred_GKX.png" alt="组合预测" style="width:100%;height:100%;object-fit:contain">
         </div>
-        <p style="font-size:.82em">Predicted vs Realized 时序跟踪<br>CA1预测值与实际收益跟踪最紧</p>
+        <p style="font-size:.75rem;color:var(--text-helper);text-align:center;margin:.1em 0 0 0">CA1预测值与实际组合收益跟踪最紧 — 预测信号从个股层面有效转化为组合收益</p>
       </div>
-    </div>
-    <div class="callout" style="margin-top:.5em;text-align:center">
-      CA1在个股和组合两个层面均展现最优预测力——非线性编码捕获了线性模型遗漏的收益相关信息
     </div>
   </section>
 
@@ -464,28 +457,22 @@ table.data-table .best{font-weight:700;background:#fef9e7}
       <span class="chrome-left">07 · 因子</span>
       <span class="chrome-right">17 / 19</span>
     </div>
-    <h2 class="h-xl" style="margin-bottom:.4em">特征重要性与定价误差</h2>
-    <div class="grid-2">
-      <div>
-        <div class="figure-panel" style="margin:0">
-          <div class="frame-img r-4x3" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
-            <img src="images/importance_normalized.png" alt="特征重要性" style="object-fit:cover;width:100%;height:100%">
-          </div>
-          <div class="fig-caption">归一化特征重要性热力图<br>跨模型x因子的特征驱动分布</div>
+    <h2 class="h-xl" style="margin-bottom:.3em">特征重要性与定价误差</h2>
+    <div style="flex:1;display:flex;gap:.8em;min-height:0">
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <h3 class="h-md" style="margin-bottom:.2em">归一化特征重要性</h3>
+        <div style="flex:1;min-height:0;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img src="images/importance_normalized.png" alt="特征重要性" style="width:100%;height:100%;object-fit:contain">
         </div>
+        <p style="font-size:.72rem;color:var(--text-helper);text-align:center;margin:.15em 0 0 0">跨模型x因子的特征驱动分布 — 价值+动量+质量+风险，非单一过拟合</p>
       </div>
-      <div>
-        <div class="figure-panel" style="margin:0">
-          <div class="frame-img r-4x3" style="background:var(--grey-1);display:flex;align-items:center;justify-content:center">
-            <img src="images/pricing_errors_lagged.png" alt="定价误差" style="object-fit:cover;width:100%;height:100%">
-          </div>
-          <div class="fig-caption">定价误差诊断<br>滞后特征 vs Post-Formation Alpha</div>
+      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <h3 class="h-md" style="margin-bottom:.2em">定价误差诊断</h3>
+        <div style="flex:1;min-height:0;background:var(--grey-1);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img src="images/pricing_errors_lagged.png" alt="定价误差" style="width:100%;height:100%;object-fit:contain">
         </div>
+        <p style="font-size:.72rem;color:var(--text-helper);text-align:center;margin:.15em 0 0 0">滞后特征 vs Post-Formation Alpha — 无系统性关系 = 无遗漏变量偏差</p>
       </div>
-    </div>
-    <div class="abstract-box" style="margin:.6em 1em;font-size:.82em">
-      <strong>诊断结论</strong>
-      CA1的预测由跨维度特征集合驱动(价值+动量+质量+风险)，非单一过拟合。定价误差分析显示滞后特征不能系统解释post-formation alpha = 无遗漏变量偏差。
     </div>
   </section>
 
